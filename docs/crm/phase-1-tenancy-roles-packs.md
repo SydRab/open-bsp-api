@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01, P1-02, P1-03, P1-05 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01, P1-02, P1-03, P1-04, P1-05 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -81,6 +81,42 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
 - Setting up a new organization's preset roles is not logged permission by permission
   (`crm.audit_suppress`); the organization's creation is one entry.
 
+## Settings engine and teams (P1-04)
+
+Schema: `10-06_teams.sql`, `10-07_settings.sql`, `10-15_settings.sql`,
+`10-22_settings_triggers.sql`. Catalog: `20261020220553_crm_settings_catalog.sql`. Tests:
+`crm_06_settings.test.sql`. UI: Settings → Rules & modules.
+
+- **Layers**: a setting's effective value comes from the most specific layer that has one:
+  **user → team → organization → pack → platform default**. A **locked** setting always uses
+  the platform default.
+- **Catalog** (`crm.setting_definitions`): key, category, label, a JSON Schema subset for valid
+  values (`crm.validate_setting_value`: type, enum, min/max, lengths, pattern, items,
+  properties, required, `additionalProperties: false`, and our `mustContain`), platform
+  default, allowed scopes, lock, edit permission, and the pack item (and path inside it) that
+  is its pack layer.
+- **Pack layer**: read from `organization_pack_items.pack_value`, so a pack upgrade changes the
+  pack layer and never an organization's own value. A pack value that fails the schema is
+  ignored (the platform default applies). Compliance and module pack items can no longer be
+  edited directly; organizations change them through settings.
+- **Locked compliance minimums** (approved 2026-10-21): marketing needs recorded opt-in; AI and
+  news content need approval; STOP and UNSUBSCRIBE are always opt-out keywords (organizations
+  may add more).
+- **Teams** (`crm.teams`, `crm.team_members`; `crm.create_team`, `rename_team`, `delete_team`,
+  `set_team_member`, all needing `members.manage`). A member in several teams that set
+  different values gets the organization value, and `get_settings` reports `team_conflict`.
+- **Reading**: `crm.get_setting(org, key)` for members and API keys of an active organization
+  (with their own team/user layers); the platform (service role) may pass the member to
+  resolve for: `crm.get_setting(org, key, agent_id)`. This is what the send path will call.
+  `crm.get_settings(org)` lists everything with value, source and `can_edit` for the screen.
+- **Writing**: `crm.set_setting(org, key, value, scope = 'tenant', target = null)` and
+  `crm.reset_setting(...)`. Organization and team values need the setting's
+  `edit_permission`; members set their own user values freely. Every change is audited
+  (`setting.changed` / `setting.reset`, with before and after).
+- **Adding a setting**: a new migration inserting into `crm.setting_definitions`. The first
+  catalog has organization-level settings only; team/user scopes are tested with a test-only
+  definition.
+
 ## Operations
 
 | Task | How |
@@ -118,5 +154,5 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
 - **Audit**: there is no retention limit and no per-person redaction yet. Erasing one person
   (DPDP, later phase) must also blank their email in invitation entries, which needs a second
   controlled exception to append-only, like the purge's.
-- **Pack items** are stored generically; the settings engine (P1-04), custom fields
+- **Pack items** are stored generically; custom fields
   (P1-06), pipeline and template phases read their kind from `organization_pack_items`.
