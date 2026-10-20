@@ -4,7 +4,7 @@
 project_id = "open-bsp-api"
 
 [api]
-schemas = ["public", "storage", "billing"]
+schemas = ["public", "storage", "billing", "crm"]
 
 # Auth. site_url is the frontend origin; it + the OAuth authorization path form
 # the consent UI URL the native OAuth server redirects to. In prod, Site URL is
@@ -106,3 +106,10 @@ entrypoint = "./functions/slack-webhook/index.ts"
 verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/slack-dispatcher/index.ts"
+
+# [crm] Invitations with a crm role (P1-03). JWT required: the invitation is
+# created as the caller so the database enforces who may invite whom.
+[functions.crm-invitations]
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/crm-invitations/index.ts"

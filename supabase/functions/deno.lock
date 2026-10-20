@@ -2,9 +2,11 @@
   "version": "5",
   "specifiers": {
     "jsr:@hono/hono@*": "4.12.24",
+    "jsr:@std/assert@1.0.13": "1.0.13",
     "jsr:@std/csv@*": "1.0.6",
     "jsr:@std/encoding@*": "1.0.10",
     "jsr:@std/encoding@1.0.10": "1.0.10",
+    "jsr:@std/internal@^1.0.6": "1.0.14",
     "jsr:@supabase/functions-js@*": "2.108.1",
     "npm:@google/genai@*": "1.39.0_@modelcontextprotocol+sdk@1.25.3_zod@4.3.6",
     "npm:@modelcontextprotocol/sdk@*": "1.25.3_zod@4.3.6_ajv@8.18.0_express@5.2.1",
@@ -28,6 +30,12 @@
     "@hono/hono@4.12.24": {
       "integrity": "a74a40f06ae6704ddd0e8e576f6da9d34666c3e1e0f5412a2c1ff800ffd092f4"
     },
+    "@std/assert@1.0.13": {
+      "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/csv@1.0.6": {
       "integrity": "52ef0e62799a0028d278fa04762f17f9bd263fad9a8e7f98c14fbd371d62d9fd"
     },
@@ -36,6 +44,9 @@
     },
     "@std/encoding@1.0.10": {
       "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
     "@supabase/functions-js@2.93.3": {
       "integrity": "83c73ae5e82508d0afa892d7f177b5ae037bd75f12be2631d41f8db6b8b7f29c",
