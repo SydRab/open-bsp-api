@@ -42,3 +42,12 @@ grant execute on function crm.reset_pack_item(uuid) to authenticated;
 
 -- Platform only (service_role): suspend_organization, reactivate_organization,
 -- purge_organizations, apply_pack, create_preset_roles, generate_slug.
+
+-- Audit log (P1-08): read-only for every API role, and only signed-in members
+-- (through the policy in 10-30) and the platform. Nobody writes but
+-- crm.write_audit, which runs as the owner.
+revoke all on crm.audit_log from anon, authenticated, service_role;
+grant select on crm.audit_log to authenticated, service_role;
+
+grant execute on function crm.get_audit_log(uuid, bigint, int, text, uuid, timestamp with time zone, timestamp with time zone) to authenticated;
+-- crm.write_audit: service_role only (edge functions), via the grant above.

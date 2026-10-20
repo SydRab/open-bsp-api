@@ -44,12 +44,16 @@ $$;
 
 -- The eight preset roles, copied into one organization with their default
 -- permissions. The owner role is locked and holds every permission.
+-- Not audited: setting up an organization is one event
+-- (organization.created), not a hundred permission grants.
 create function crm.create_preset_roles(p_organization_id uuid) returns void
 language plpgsql
 security definer
 set search_path to ''
 as $$
 begin
+  perform set_config('crm.audit_suppress', 'on', true);
+
   insert into crm.roles (
     organization_id, key, name, description, tier, lead_scope, is_preset,
     is_locked, sort_order
@@ -75,6 +79,8 @@ begin
   where r.organization_id = p_organization_id
     and r.key = 'owner'
   on conflict do nothing;
+
+  perform set_config('crm.audit_suppress', 'off', true);
 end;
 $$;
 
@@ -221,6 +227,10 @@ as $$
 declare
   v_count int;
 begin
+  -- Lets these organizations' audit rows go with them (the one exception
+  -- to append-only, see 10-05) and keeps the cascade from writing new ones.
+  perform set_config('crm.purging', 'on', true);
+
   delete from public.organizations o
   using crm.organization_profiles p
   where p.organization_id = o.id
@@ -228,6 +238,8 @@ begin
     and p.purge_after <= now();
 
   get diagnostics v_count = row_count;
+
+  perform set_config('crm.purging', 'off', true);
   return v_count;
 end;
 $$;

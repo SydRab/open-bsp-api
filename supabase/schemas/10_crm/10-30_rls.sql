@@ -110,3 +110,14 @@ create policy "managers can edit their orgs pack items"
 on crm.organization_pack_items for update to authenticated
 using (organization_id in (select crm.get_permitted_orgs('organization.manage')))
 with check (organization_id in (select crm.get_permitted_orgs('organization.manage')));
+
+-- Audit log (P1-08) -----------------------------------------------------------
+
+alter table crm.audit_log enable row level security;
+
+-- Signed-in members holding audit.view (Owner and Admin by default). Not API
+-- keys: the table is granted to authenticated only (10-40). There are no
+-- write policies; crm.write_audit is the only writer.
+create policy "audit viewers can read their orgs audit log"
+on crm.audit_log for select to authenticated
+using (organization_id in (select crm.get_permitted_orgs('audit.view')));
