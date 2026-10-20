@@ -105,11 +105,19 @@ create policy "members can read their orgs pack items"
 on crm.organization_pack_items for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
--- Column grants (10-40) limit this to `value`.
+-- Column grants (10-40) limit this to `value`. Compliance and module items
+-- are the pack layer of settings (P1-04): tenants change those through
+-- crm.set_setting, so a pack upgrade never meets a tenant edit there.
 create policy "managers can edit their orgs pack items"
 on crm.organization_pack_items for update to authenticated
-using (organization_id in (select crm.get_permitted_orgs('organization.manage')))
-with check (organization_id in (select crm.get_permitted_orgs('organization.manage')));
+using (
+  organization_id in (select crm.get_permitted_orgs('organization.manage'))
+  and kind not in ('compliance', 'module')
+)
+with check (
+  organization_id in (select crm.get_permitted_orgs('organization.manage'))
+  and kind not in ('compliance', 'module')
+);
 
 -- Audit log (P1-08) -----------------------------------------------------------
 
@@ -121,3 +129,35 @@ alter table crm.audit_log enable row level security;
 create policy "audit viewers can read their orgs audit log"
 on crm.audit_log for select to authenticated
 using (organization_id in (select crm.get_permitted_orgs('audit.view')));
+
+-- Teams and settings (P1-04) ---------------------------------------------------
+
+alter table crm.teams enable row level security;
+alter table crm.team_members enable row level security;
+alter table crm.setting_definitions enable row level security;
+alter table crm.setting_values enable row level security;
+
+create policy "members can read their orgs teams"
+on crm.teams for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "members can read their orgs team members"
+on crm.team_members for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "signed-in users can read the settings catalog"
+on crm.setting_definitions for select to authenticated, anon
+using (true);
+
+-- Organization and team values: every member. A member's own values: that
+-- member and whoever manages members. Writes go through crm.set_setting.
+create policy "members can read their orgs settings"
+on crm.setting_values for select to authenticated, anon
+using (
+  organization_id in (select public.get_authorized_orgs('member'))
+  and (
+    scope <> 'user'
+    or agent_id in (select public.get_own_agents())
+    or organization_id in (select crm.get_permitted_orgs('members.manage'))
+  )
+);

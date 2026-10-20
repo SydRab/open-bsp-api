@@ -52,3 +52,16 @@ grant select on crm.audit_log to authenticated, service_role;
 
 grant execute on function crm.get_audit_log(uuid, bigint, int, text, uuid, timestamp with time zone, timestamp with time zone) to authenticated;
 -- crm.write_audit: service_role only (edge functions), via the grant above.
+
+-- Settings and teams (P1-04). Tables are read-only (select, from the grant
+-- above); writes go through these functions, each checking its permission.
+grant execute on function crm.get_setting(uuid, text, uuid) to anon, authenticated;
+grant execute on function crm.get_settings(uuid) to anon, authenticated;
+grant execute on function crm.set_setting(uuid, text, jsonb, text, uuid) to authenticated;
+grant execute on function crm.reset_setting(uuid, text, text, uuid) to authenticated;
+grant execute on function crm.create_team(uuid, text) to authenticated;
+grant execute on function crm.rename_team(uuid, text) to authenticated;
+grant execute on function crm.delete_team(uuid) to authenticated;
+grant execute on function crm.set_team_member(uuid, uuid, boolean) to authenticated;
+-- Internal (service_role only): resolve_setting, setting_target,
+-- assert_can_read_settings, validate_setting_value.

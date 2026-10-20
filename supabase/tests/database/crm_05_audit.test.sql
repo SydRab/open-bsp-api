@@ -167,7 +167,7 @@ select is(
 -- Pack items -------------------------------------------------------------------------
 
 select id as item from crm.organization_pack_items
-where organization_id = :'org' order by kind, item_key limit 1 \gset
+where organization_id = :'org' and kind = 'pipeline_stage' order by item_key limit 1 \gset
 
 select tests.as_user('owner@test.local');
 update crm.organization_pack_items set value = '"Customized"'::jsonb where id = :'item';
