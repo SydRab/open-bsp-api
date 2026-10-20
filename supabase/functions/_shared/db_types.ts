@@ -548,6 +548,86 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"setting_definitions": {
+                  Row: {
+                    "category": string,"created_at": string,"description": string | null,"edit_permission": string,"is_locked": boolean,"key": string,"label": string,"pack_item_key": string | null,"pack_item_kind": string | null,"pack_item_path": (string)[],"platform_default": NonNullable<Json>,"schema": NonNullable<Json>,"scopes": (string)[],"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"created_at"?: string,"description"?: string | null,"edit_permission"?: string,"is_locked"?: boolean,"key": string,"label": string,"pack_item_key"?: string | null,"pack_item_kind"?: string | null,"pack_item_path"?: (string)[],"platform_default": NonNullable<Json>,"schema": NonNullable<Json>,"scopes"?: (string)[],"sort_order"?: number
+                  }
+                  Update: {
+                    "category"?: string,"created_at"?: string,"description"?: string | null,"edit_permission"?: string,"is_locked"?: boolean,"key"?: string,"label"?: string,"pack_item_key"?: string | null,"pack_item_kind"?: string | null,"pack_item_path"?: (string)[],"platform_default"?: NonNullable<Json>,"schema"?: NonNullable<Json>,"scopes"?: (string)[],"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "setting_definitions_edit_permission_fkey"
+      columns: ["edit_permission"]
+isOneToOne: false
+      referencedRelation: "permissions"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"setting_values": {
+                  Row: {
+                    "agent_id": string | null,"created_at": string,"id": string,"organization_id": string,"scope": string,"setting_key": string,"team_id": string | null,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id"?: string | null,"created_at"?: string,"id"?: string,"organization_id": string,"scope": string,"setting_key": string,"team_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null,"value": NonNullable<Json>
+                  }
+                  Update: {
+                    "agent_id"?: string | null,"created_at"?: string,"id"?: string,"organization_id"?: string,"scope"?: string,"setting_key"?: string,"team_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "setting_values_setting_key_fkey"
+      columns: ["setting_key"]
+isOneToOne: false
+      referencedRelation: "setting_definitions"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "setting_values_team_fkey"
+      columns: ["organization_id","team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"team_members": {
+                  Row: {
+                    "agent_id": string,"created_at": string,"organization_id": string,"team_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id": string,"created_at"?: string,"organization_id": string,"team_id": string
+                  }
+                  Update: {
+                    "agent_id"?: string,"created_at"?: string,"organization_id"?: string,"team_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "team_members_team_fkey"
+      columns: ["organization_id","team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"teams": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"vertical_packs": {
                   Row: {
                     "created_at": string,"description": string | null,"is_default": boolean,"key": string,"name": string
@@ -603,6 +683,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"assert_can_read_settings":
+{ Args: { "p_organization_id": string }; Returns: string
+                           },
 "caller_agent":
 { Args: { "p_organization_id": string }; Returns: Database["public"]['Tables']["agents"]['Row']
                           SetofOptions: {
@@ -617,11 +700,17 @@ isOneToOne: false
 "create_preset_roles":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"create_team":
+{ Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
 "deactivate_member":
 { Args: { "p_agent_id": string }; Returns: undefined
                            },
 "default_role_key":
 { Args: { "p_tier": Database["public"]['Enums']["role"] }; Returns: string
+                           },
+"delete_team":
+{ Args: { "p_team_id": string }; Returns: undefined
                            },
 "deletion_grace_period":
 { Args: Record<PropertyKey, never>; Returns: string
@@ -652,6 +741,14 @@ isOneToOne: false
 "get_permitted_orgs":
 { Args: { "p_permission": string }; Returns: string[]
                            },
+"get_setting":
+{ Args: { "p_agent_id"?: string,"p_key": string,"p_organization_id": string }; Returns: Json
+                           },
+"get_settings":
+{ Args: { "p_organization_id": string }; Returns: {
+              "can_edit": boolean,"category": string,"description": string,"is_locked": boolean,"key": string,"label": string,"schema": Json,"scopes": (string)[],"sort_order": number,"source": string,"team_conflict": boolean,"tenant_value": Json,"value": Json
+            }[]
+                           },
 "has_permission":
 { Args: { "p_organization_id": string,"p_permission": string }; Returns: boolean
                            },
@@ -672,6 +769,9 @@ isOneToOne: false
 "reactivate_organization":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"rename_team":
+{ Args: { "p_name": string,"p_team_id": string }; Returns: undefined
+                           },
 "request_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: string
                            },
@@ -683,6 +783,14 @@ isOneToOne: false
                            },
 "reset_role_permissions":
 { Args: { "p_role_id": string }; Returns: undefined
+                           },
+"reset_setting":
+{ Args: { "p_key": string,"p_organization_id": string,"p_scope"?: string,"p_target"?: string }; Returns: undefined
+                           },
+"resolve_setting":
+{ Args: { "p_agent_id"?: string,"p_key": string,"p_organization_id": string }; Returns: {
+              "source": string,"team_conflict": boolean,"value": Json
+            }[]
                            },
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
@@ -705,6 +813,15 @@ isOneToOne: false
 "set_role_permission":
 { Args: { "p_enabled": boolean,"p_permission": string,"p_role_id": string }; Returns: undefined
                            },
+"set_setting":
+{ Args: { "p_key": string,"p_organization_id": string,"p_scope"?: string,"p_target"?: string,"p_value": Json }; Returns: undefined
+                           },
+"set_team_member":
+{ Args: { "p_agent_id": string,"p_member": boolean,"p_team_id": string }; Returns: undefined
+                           },
+"setting_target":
+{ Args: { "p_key": string,"p_organization_id": string,"p_scope": string,"p_target": string }; Returns: Record<string, unknown>
+                           },
 "suspend_organization":
 { Args: { "p_organization_id": string,"p_reason"?: string }; Returns: undefined
                            },
@@ -713,6 +830,9 @@ isOneToOne: false
                            },
 "upgrade_organization_pack":
 { Args: { "p_organization_id": string,"p_version"?: number }; Returns: number
+                           },
+"validate_setting_value":
+{ Args: { "p_path"?: string,"p_schema": Json,"p_value": Json }; Returns: string
                            },
 "write_audit":
 { Args: { "p_action": string,"p_details"?: Json,"p_organization_id": string,"p_target_id"?: string,"p_target_type"?: string }; Returns: undefined
