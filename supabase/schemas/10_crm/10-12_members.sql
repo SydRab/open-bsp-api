@@ -163,6 +163,25 @@ begin
 end;
 $$;
 
+-- The crm role each of the caller's pending invitations offers, for the
+-- invitation card. The invitee is not a member yet, so they cannot read the
+-- organization's roles; this returns only the name and key of the role on
+-- invitations addressed to their own email.
+create function crm.get_my_invitation_roles()
+returns table (invitation_id uuid, role_key text, role_name text)
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select ir.invitation_id, r.key, r.name
+  from crm.invitation_roles ir
+  join public.invitations i on i.id = ir.invitation_id
+  join crm.roles r on r.id = ir.role_id
+  where i.status = 'pending'
+    and lower(i.email) = lower(auth.jwt()->>'email');
+$$;
+
 -- Role change. Moving someone off the owner role is refused by the upstream
 -- last-owner guard if they are the last owner.
 create function crm.set_member_role(p_agent_id uuid, p_role_key text)

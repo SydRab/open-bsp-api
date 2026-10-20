@@ -1,0 +1,13 @@
+<!--
+  [crm] Invite email (P1-03). Links to the app's /auth/confirm page with a
+  token hash; the app calls supabase.auth.verifyOtp({ token_hash, type }).
+  The default template's /auth/v1/verify link returns the session in the URL
+  fragment, which the UI's PKCE client rejects.
+  https://supabase.com/docs/guides/auth/auth-email-templates
+  https://supabase.com/docs/guides/local-development/customizing-email-templates
+  Production: paste this into Authentication > Email Templates > Invite user.
+-->
+<h2>You've been invited</h2>
+<p>You've been invited to join a team. Follow the link to accept:</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite">Accept the invitation</a></p>
+<p>If you weren't expecting this, you can ignore this email.</p>

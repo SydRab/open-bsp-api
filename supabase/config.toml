@@ -24,6 +24,19 @@ enabled = true
 authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = true
 
+# [crm] Email templates (P1-03): links go to the app's /auth/confirm page with
+# a token hash instead of /auth/v1/verify, whose fragment tokens the UI's PKCE
+# client rejects. CI does not deploy this config: paste the same templates in
+# the dashboard (Authentication > Email Templates).
+# https://supabase.com/docs/guides/local-development/customizing-email-templates
+[auth.email.template.invite]
+subject = "You've been invited"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 [functions.whatsapp-webhook]
 verify_jwt = false
 import_map = "./functions/deno.json"

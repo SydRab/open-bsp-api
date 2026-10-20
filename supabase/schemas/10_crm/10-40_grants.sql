@@ -30,6 +30,7 @@ grant execute on function crm.cancel_organization_deletion(uuid) to authenticate
 grant execute on function crm.set_require_mfa_for_admins(uuid, boolean) to authenticated;
 grant execute on function crm.invite_member(uuid, text, text) to authenticated;
 grant execute on function crm.revoke_invitation(uuid) to authenticated;
+grant execute on function crm.get_my_invitation_roles() to authenticated;
 grant execute on function crm.set_member_role(uuid, text) to authenticated;
 grant execute on function crm.deactivate_member(uuid) to authenticated;
 grant execute on function crm.set_member_lead_scope(uuid, text) to authenticated;

@@ -1,0 +1,11 @@
+<!--
+  [crm] Sign-in link email (P1-03: existing users invited to another
+  organization get this). Same reasoning as invite.html: link to the app's
+  /auth/confirm page with a token hash, verified there with verifyOtp.
+  https://supabase.com/docs/guides/auth/auth-email-templates
+  Production: paste this into Authentication > Email Templates > Magic Link.
+-->
+<h2>Your sign-in link</h2>
+<p>Follow the link to sign in. It expires shortly and works once.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
+<p>If you didn't ask for this, you can ignore this email.</p>

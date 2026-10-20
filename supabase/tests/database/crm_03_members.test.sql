@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(26);
+select plan(28);
 
 select tests.create_user('owner@test.local');
 select tests.create_user('admin@test.local');
@@ -89,6 +89,17 @@ select isnt_empty(
   format('select 1 from crm.invitation_roles where invitation_id = %L', :'invitation'),
   'the invitee can see the role they are offered'
 );
+select results_eq(
+  format('select role_key, role_name from crm.get_my_invitation_roles() where invitation_id = %L', :'invitation'),
+  $$ values ('sales_rep'::text, 'Sales Rep'::text) $$,
+  'the invitee gets the offered role''s name for the invitation card'
+);
+select tests.as_user('viewer@test.local');
+select is_empty(
+  'select 1 from crm.get_my_invitation_roles()',
+  'nobody else sees invitation roles addressed to another email'
+);
+select tests.as_user('new.rep@test.local');
 select lives_ok(
   format('select public.accept_invitation(%L)', :'invitation'),
   'the invitee accepts through the upstream function'
