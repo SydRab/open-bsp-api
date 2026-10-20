@@ -1,0 +1,424 @@
+{
+  "key": "trading_institute",
+  "version": 1,
+  "name": "Trading Institute",
+  "description": "Defaults for trading and stock-market academies: lead-to-student pipeline, lead qualification, English and Hindi templates and finance-content compliance.",
+  "is_default": true,
+  "pipeline_stages": [
+    {
+      "key": "lead_inquiring",
+      "name": { "en": "Lead Inquiring", "hi": "पूछताछ कर रहा लीड" },
+      "type": "open"
+    },
+    {
+      "key": "trial_booked",
+      "name": { "en": "Trial Booked", "hi": "ट्रायल बुक" },
+      "type": "open"
+    },
+    {
+      "key": "paid_student",
+      "name": { "en": "Paid Student", "hi": "फ़ीस भरने वाला छात्र" },
+      "type": "won"
+    },
+    {
+      "key": "lost",
+      "name": { "en": "Lost", "hi": "खोया हुआ लीड" },
+      "type": "lost"
+    }
+  ],
+  "custom_fields": [
+    {
+      "key": "experience_level",
+      "entity": "contact",
+      "type": "select",
+      "label": { "en": "Trading experience", "hi": "ट्रेडिंग का अनुभव" },
+      "required": false,
+      "options": [
+        { "value": "beginner", "label": { "en": "Beginner", "hi": "शुरुआती" } },
+        {
+          "value": "some_experience",
+          "label": { "en": "Some experience", "hi": "थोड़ा अनुभव" }
+        },
+        {
+          "value": "experienced",
+          "label": { "en": "Experienced", "hi": "अनुभवी" }
+        }
+      ]
+    },
+    {
+      "key": "capital_range",
+      "entity": "contact",
+      "type": "select",
+      "label": {
+        "en": "Capital planned for trading",
+        "hi": "ट्रेडिंग के लिए योजना की गई पूंजी"
+      },
+      "required": false,
+      "options": [
+        {
+          "value": "under_50k",
+          "label": { "en": "Under ₹50,000", "hi": "₹50,000 से कम" }
+        },
+        {
+          "value": "between_50k_2l",
+          "label": { "en": "₹50,000 – ₹2 lakh", "hi": "₹50,000 – ₹2 लाख" }
+        },
+        {
+          "value": "between_2l_10l",
+          "label": { "en": "₹2 lakh – ₹10 lakh", "hi": "₹2 लाख – ₹10 लाख" }
+        },
+        {
+          "value": "above_10l",
+          "label": { "en": "Above ₹10 lakh", "hi": "₹10 लाख से अधिक" }
+        },
+        {
+          "value": "not_sure",
+          "label": { "en": "Not sure yet", "hi": "अभी तय नहीं" }
+        }
+      ]
+    },
+    {
+      "key": "preferred_market",
+      "entity": "contact",
+      "type": "multi_select",
+      "label": { "en": "Preferred market", "hi": "पसंदीदा मार्केट" },
+      "required": false,
+      "options": [
+        {
+          "value": "equity",
+          "label": { "en": "Equity (stocks)", "hi": "इक्विटी (शेयर)" }
+        },
+        {
+          "value": "futures_options",
+          "label": { "en": "Futures & options", "hi": "फ्यूचर्स और ऑप्शंस" }
+        },
+        {
+          "value": "commodities",
+          "label": { "en": "Commodities", "hi": "कमोडिटी" }
+        },
+        { "value": "currency", "label": { "en": "Currency", "hi": "करेंसी" } },
+        {
+          "value": "not_sure",
+          "label": { "en": "Not sure yet", "hi": "अभी तय नहीं" }
+        }
+      ]
+    },
+    {
+      "key": "learning_goal",
+      "entity": "contact",
+      "type": "select",
+      "label": { "en": "Learning goal", "hi": "सीखने का लक्ष्य" },
+      "required": false,
+      "options": [
+        {
+          "value": "understand_basics",
+          "label": { "en": "Understand the basics", "hi": "बुनियादी बातें समझना" }
+        },
+        {
+          "value": "part_time",
+          "label": { "en": "Trade part-time", "hi": "पार्ट-टाइम ट्रेडिंग" }
+        },
+        {
+          "value": "full_time",
+          "label": { "en": "Trade full-time", "hi": "फुल-टाइम ट्रेडिंग" }
+        }
+      ]
+    },
+    {
+      "key": "batch_timing",
+      "entity": "contact",
+      "type": "select",
+      "label": { "en": "Preferred batch timing", "hi": "पसंदीदा बैच समय" },
+      "required": false,
+      "options": [
+        { "value": "morning", "label": { "en": "Morning", "hi": "सुबह" } },
+        { "value": "evening", "label": { "en": "Evening", "hi": "शाम" } },
+        { "value": "weekend", "label": { "en": "Weekend", "hi": "सप्ताहांत" } }
+      ]
+    },
+    {
+      "key": "preferred_language",
+      "entity": "contact",
+      "type": "select",
+      "label": { "en": "Preferred language", "hi": "पसंदीदा भाषा" },
+      "required": false,
+      "options": [
+        { "value": "en", "label": { "en": "English", "hi": "अंग्रेज़ी" } },
+        { "value": "hi", "label": { "en": "Hindi", "hi": "हिंदी" } }
+      ]
+    },
+    {
+      "key": "city",
+      "entity": "contact",
+      "type": "text",
+      "label": { "en": "City", "hi": "शहर" },
+      "required": false
+    }
+  ],
+  "qualification_questions": [
+    {
+      "key": "ask_experience",
+      "field": "experience_level",
+      "prompt": {
+        "en": "How much trading experience do you have?",
+        "hi": "आपको ट्रेडिंग का कितना अनुभव है?"
+      }
+    },
+    {
+      "key": "ask_market",
+      "field": "preferred_market",
+      "prompt": {
+        "en": "Which market would you like to learn about?",
+        "hi": "आप किस मार्केट के बारे में सीखना चाहते हैं?"
+      }
+    },
+    {
+      "key": "ask_goal",
+      "field": "learning_goal",
+      "prompt": {
+        "en": "What is your main goal from this course?",
+        "hi": "इस कोर्स से आपका मुख्य लक्ष्य क्या है?"
+      }
+    },
+    {
+      "key": "ask_capital",
+      "field": "capital_range",
+      "prompt": {
+        "en": "Roughly how much capital do you plan to start with? This only helps us suggest the right course.",
+        "hi": "आप लगभग कितनी पूंजी से शुरुआत करना चाहते हैं? इससे हमें सही कोर्स सुझाने में मदद मिलती है।"
+      }
+    },
+    {
+      "key": "ask_timing",
+      "field": "batch_timing",
+      "prompt": {
+        "en": "Which batch timing suits you best?",
+        "hi": "आपके लिए कौन सा बैच समय सबसे अच्छा है?"
+      }
+    }
+  ],
+  "message_templates": [
+    {
+      "name": "lead_inquiry_ack",
+      "category": "UTILITY",
+      "purpose": "Reply to a new inquiry",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, thank you for your interest in {{2}}. A counsellor will contact you shortly to understand your goals and suggest a suitable course.",
+          "examples": ["Priya", "Market Basics Academy"]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, {{2}} में रुचि दिखाने के लिए धन्यवाद। हमारे काउंसलर जल्द ही आपसे संपर्क करेंगे और आपके लक्ष्य के अनुसार सही कोर्स बताएंगे।",
+          "examples": ["प्रिया", "मार्केट बेसिक्स अकादमी"]
+        }
+      }
+    },
+    {
+      "name": "trial_class_confirmation",
+      "category": "UTILITY",
+      "purpose": "Confirm a booked trial class",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, your free trial class is booked for {{2}}. Join using this link: {{3}} and keep a notebook ready. See you in class!",
+          "examples": [
+            "Priya",
+            "Saturday 15 Nov, 7:00 PM",
+            "https://example.com/join/abc"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, आपकी मुफ़्त ट्रायल क्लास {{2}} के लिए बुक हो गई है। इस लिंक से जुड़ें: {{3}} और एक नोटबुक साथ रखें। क्लास में मिलते हैं!",
+          "examples": [
+            "प्रिया",
+            "शनिवार 15 नवंबर, शाम 7:00 बजे",
+            "https://example.com/join/abc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "trial_class_reminder",
+      "category": "UTILITY",
+      "purpose": "Remind a lead of their trial class",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Reminder: your trial class starts at {{1}} today. Join here: {{2}} a few minutes early so we can start on time.",
+          "examples": ["7:00 PM", "https://example.com/join/abc"]
+        },
+        "hi": {
+          "body": "याद दिलाना: आपकी ट्रायल क्लास आज {{1}} बजे शुरू होगी। यहाँ जुड़ें: {{2}} कुछ मिनट पहले, ताकि हम समय पर शुरू कर सकें।",
+          "examples": ["शाम 7:00", "https://example.com/join/abc"]
+        }
+      }
+    },
+    {
+      "name": "webinar_reminder",
+      "category": "UTILITY",
+      "purpose": "Remind a registrant of a webinar",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, the webinar \"{{2}}\" starts at {{3}}. Join here: {{4}} and bring your questions for the live Q&A.",
+          "examples": [
+            "Priya",
+            "Risk Management Basics",
+            "7:00 PM today",
+            "https://example.com/webinar/xyz"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, वेबिनार \"{{2}}\" {{3}} शुरू होगा। यहाँ जुड़ें: {{4}} और लाइव सवाल-जवाब के लिए अपने सवाल साथ लाएँ।",
+          "examples": [
+            "प्रिया",
+            "रिस्क मैनेजमेंट की बुनियादी बातें",
+            "आज शाम 7:00 बजे",
+            "https://example.com/webinar/xyz"
+          ]
+        }
+      }
+    },
+    {
+      "name": "fee_payment_reminder",
+      "category": "UTILITY",
+      "purpose": "Remind a student of a fee instalment",
+      "attach_disclaimer": false,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, this is a reminder that your fee instalment of {{2}} for {{3}} is due on {{4}}. Please ignore this message if you have already paid.",
+          "examples": ["Priya", "₹5,000", "Market Basics Course", "20 Nov 2026"]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, याद दिला दें कि आपकी {{2}} की फ़ीस किस्त ({{3}}) {{4}} को देय है। अगर आप भुगतान कर चुके हैं तो कृपया इस संदेश को अनदेखा करें।",
+          "examples": ["प्रिया", "₹5,000", "मार्केट बेसिक्स कोर्स", "20 नवंबर 2026"]
+        }
+      }
+    },
+    {
+      "name": "payment_receipt",
+      "category": "UTILITY",
+      "purpose": "Confirm a received payment",
+      "attach_disclaimer": false,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, we have received your payment of {{2}} for {{3}}. Your receipt number is {{4}} for your records. Thank you!",
+          "examples": ["Priya", "₹5,000", "Market Basics Course", "RCPT-1042"]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, हमें आपका {{2}} का भुगतान ({{3}}) मिल गया है। आपके रिकॉर्ड के लिए रसीद नंबर {{4}} है। धन्यवाद!",
+          "examples": ["प्रिया", "₹5,000", "मार्केट बेसिक्स कोर्स", "RCPT-1042"]
+        }
+      }
+    },
+    {
+      "name": "new_batch_announcement",
+      "category": "MARKETING",
+      "purpose": "Announce a new batch to opted-in leads",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, admissions are open for our new {{2}} batch starting {{3}}. Learn market basics and risk management with live mentors. Reply STOP to unsubscribe.",
+          "examples": ["Priya", "evening", "1 Dec 2026"]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, हमारे नए {{2}} बैच में एडमिशन शुरू हैं, जो {{3}} से शुरू होगा। लाइव मेंटर्स के साथ मार्केट की बुनियादी बातें और रिस्क मैनेजमेंट सीखें। अनसब्सक्राइब करने के लिए STOP लिखें।",
+          "examples": ["प्रिया", "शाम", "1 दिसंबर 2026"]
+        }
+      }
+    },
+    {
+      "name": "free_session_invite",
+      "category": "MARKETING",
+      "purpose": "Re-engage an inactive lead",
+      "attach_disclaimer": true,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, our next free session on {{2}} covers trading psychology and risk control. Reply YES to save a seat, or STOP to unsubscribe.",
+          "examples": ["Priya", "Sunday 23 Nov"]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, {{2}} को हमारे अगले मुफ़्त सेशन में ट्रेडिंग साइकोलॉजी और रिस्क कंट्रोल पर बात होगी। सीट बुक करने के लिए YES लिखें, या अनसब्सक्राइब करने के लिए STOP लिखें।",
+          "examples": ["प्रिया", "रविवार 23 नवंबर"]
+        }
+      }
+    }
+  ],
+  "compliance": {
+    "disclaimer_short": {
+      "en": "Educational only. Not investment advice.",
+      "hi": "केवल शिक्षा हेतु। यह निवेश सलाह नहीं है।"
+    },
+    "disclaimer_full": {
+      "en": "This content is for educational purposes only. It is not investment advice or a recommendation to buy or sell any security. Trading in securities and derivatives involves a risk of loss, and past performance does not guarantee future results. Please consult a SEBI-registered investment adviser before making investment decisions.",
+      "hi": "यह सामग्री केवल शैक्षिक उद्देश्य के लिए है। यह निवेश सलाह या किसी भी प्रतिभूति को खरीदने या बेचने की सिफ़ारिश नहीं है। प्रतिभूतियों और डेरिवेटिव्स में ट्रेडिंग में नुकसान का जोखिम होता है, और पिछला प्रदर्शन भविष्य के परिणामों की गारंटी नहीं है। निवेश संबंधी निर्णय लेने से पहले कृपया SEBI-पंजीकृत निवेश सलाहकार से परामर्श करें।"
+    },
+    "disclaimer_attach_rules": {
+      "broadcast": true,
+      "digest": true,
+      "ai_message": true,
+      "receipt": false,
+      "payment_confirmation": false
+    },
+    "banned_phrases": {
+      "en": [
+        "guaranteed return",
+        "guaranteed profit",
+        "assured return",
+        "sure shot",
+        "100% profit",
+        "risk-free",
+        "risk free",
+        "no risk",
+        "double your money",
+        "jackpot",
+        "multibagger",
+        "fixed monthly income",
+        "buy call",
+        "sell call",
+        "target hit"
+      ],
+      "hi": [
+        "गारंटीड रिटर्न",
+        "पक्का मुनाफा",
+        "100% मुनाफा",
+        "बिना जोखिम",
+        "पैसा डबल",
+        "जैकपॉट"
+      ]
+    },
+    "require_approval": {
+      "ai_content": true,
+      "news_content": true,
+      "broadcast": true
+    },
+    "marketing_requires_opt_in": true,
+    "opt_out_keywords": ["STOP", "UNSUBSCRIBE", "STOP ALL", "रोकें", "बंद करें"],
+    "quiet_hours": { "start": "21:00", "end": "09:00" },
+    "marketing_frequency_cap": { "max_messages": 2, "period_days": 7 }
+  },
+  "modules": {
+    "inbox": true,
+    "contacts": true,
+    "pipeline": true,
+    "broadcasts": true,
+    "sequences": true,
+    "webinars": true,
+    "payments": true,
+    "classroom": true,
+    "telegram": true,
+    "ai_agents": false,
+    "news_digest": false
+  },
+  "terminology": {
+    "contact": { "en": "Lead", "hi": "लीड" },
+    "contacts": { "en": "Leads", "hi": "लीड्स" },
+    "customer": { "en": "Student", "hi": "छात्र" },
+    "customers": { "en": "Students", "hi": "छात्र" },
+    "deal": { "en": "Admission", "hi": "एडमिशन" },
+    "team": { "en": "Batch", "hi": "बैच" },
+    "agent": { "en": "Counsellor", "hi": "काउंसलर" },
+    "product": { "en": "Course", "hi": "कोर्स" }
+  }
+}
