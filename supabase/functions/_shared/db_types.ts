@@ -312,6 +312,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"disclaimer_versions": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"kind": string,"locale": string,"organization_id": string,"text": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind": string,"locale": string,"organization_id": string,"text": string,"version": number
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"locale"?: string,"organization_id"?: string,"text"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"invitation_roles": {
                   Row: {
                     "created_at": string,"invitation_id": string,"organization_id": string,"role_id": string
@@ -422,14 +436,14 @@ isOneToOne: false
                   ]
                 },"organization_profiles": {
                   Row: {
-                    "created_at": string,"deletion_requested_at": string | null,"deletion_requested_by": string | null,"locale": string,"organization_id": string,"purge_after": string | null,"require_mfa_for_admins": boolean,"slug": string,"status": string,"suspended_at": string | null,"suspended_reason": string | null,"timezone": string,"updated_at": string
+                    "address": Json | null,"created_at": string,"deletion_requested_at": string | null,"deletion_requested_by": string | null,"legal_name": string | null,"locale": string,"organization_id": string,"purge_after": string | null,"registrations": NonNullable<Json>,"require_mfa_for_admins": boolean,"slug": string,"status": string,"support_email": string | null,"support_phone": string | null,"suspended_at": string | null,"suspended_reason": string | null,"timezone": string,"updated_at": string,"website": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deletion_requested_at"?: string | null,"deletion_requested_by"?: string | null,"locale"?: string,"organization_id": string,"purge_after"?: string | null,"require_mfa_for_admins"?: boolean,"slug": string,"status"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"timezone"?: string,"updated_at"?: string
+                    "address"?: Json | null,"created_at"?: string,"deletion_requested_at"?: string | null,"deletion_requested_by"?: string | null,"legal_name"?: string | null,"locale"?: string,"organization_id": string,"purge_after"?: string | null,"registrations"?: NonNullable<Json>,"require_mfa_for_admins"?: boolean,"slug": string,"status"?: string,"support_email"?: string | null,"support_phone"?: string | null,"suspended_at"?: string | null,"suspended_reason"?: string | null,"timezone"?: string,"updated_at"?: string,"website"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"deletion_requested_at"?: string | null,"deletion_requested_by"?: string | null,"locale"?: string,"organization_id"?: string,"purge_after"?: string | null,"require_mfa_for_admins"?: boolean,"slug"?: string,"status"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"timezone"?: string,"updated_at"?: string
+                    "address"?: Json | null,"created_at"?: string,"deletion_requested_at"?: string | null,"deletion_requested_by"?: string | null,"legal_name"?: string | null,"locale"?: string,"organization_id"?: string,"purge_after"?: string | null,"registrations"?: NonNullable<Json>,"require_mfa_for_admins"?: boolean,"slug"?: string,"status"?: string,"support_email"?: string | null,"support_phone"?: string | null,"suspended_at"?: string | null,"suspended_reason"?: string | null,"timezone"?: string,"updated_at"?: string,"website"?: string | null
                   }
                   Relationships: [
                     
@@ -703,6 +717,11 @@ isOneToOne: false
 "create_team":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
+"current_disclaimer":
+{ Args: { "p_kind": string,"p_locale": string,"p_organization_id": string }; Returns: {
+              "source": string,"text": string,"version": number
+            }[]
+                           },
 "deactivate_member":
 { Args: { "p_agent_id": string }; Returns: undefined
                            },
@@ -715,12 +734,20 @@ isOneToOne: false
 "deletion_grace_period":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"disclaimer_text_error":
+{ Args: { "p_kind": string,"p_text": string }; Returns: string
+                           },
 "generate_slug":
 { Args: { "p_name": string }; Returns: string
                            },
 "get_audit_log":
 { Args: { "p_actor"?: string,"p_area"?: string,"p_before_id"?: number,"p_from"?: string,"p_limit"?: number,"p_organization_id": string,"p_to"?: string }; Returns: {
               "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
+            }[]
+                           },
+"get_disclaimers":
+{ Args: { "p_organization_id": string }; Returns: {
+              "kind": string,"locale": string,"source": string,"text": string,"version": number
             }[]
                            },
 "get_hidden_addresses":
@@ -772,6 +799,11 @@ isOneToOne: false
 "rename_team":
 { Args: { "p_name": string,"p_team_id": string }; Returns: undefined
                            },
+"render_with_disclaimer":
+{ Args: { "p_content_type": string,"p_locale"?: string,"p_organization_id": string,"p_text": string }; Returns: {
+              "attached": boolean,"disclaimer_kind": string,"disclaimer_locale": string,"disclaimer_version": number,"text": string
+            }[]
+                           },
 "request_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: string
                            },
@@ -794,6 +826,9 @@ isOneToOne: false
                            },
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
+                           },
+"set_disclaimer":
+{ Args: { "p_kind": string,"p_locale": string,"p_organization_id": string,"p_text": string }; Returns: number
                            },
 "set_member_address_access":
 { Args: { "p_address": string,"p_agent_id": string,"p_allowed": boolean,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
