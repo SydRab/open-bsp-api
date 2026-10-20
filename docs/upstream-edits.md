@@ -7,3 +7,8 @@ need no entry.
 
 | Date | File | Change | Why | Task |
 |---|---|---|---|---|
+| 2026-10-21 | `supabase/schemas/04_functions_post_tables/04-01_auth_helpers.sql` | `get_authorized_orgs`: both branches (JWT and API key) skip organizations whose `crm.organization_profiles.status` is not `active`. Marked `[crm]`. | One place that cuts access for suspended or pending-deletion tenants across all 53 upstream policies (ADR 0002 §3). | P1-01 |
+| 2026-10-21 | `supabase/seed.sql` | Contacts block: dropped the insert into `public.contacts` and `contact_id`, added `organization_address`. | Upstream bug: the seed still used `public.contacts`, which `20260823180340_drop_contacts` removed, so `supabase start`/`db reset` failed. Worth sending upstream. | P1-01 |
+| 2026-10-21 | `supabase/config.toml` | `[api] schemas` gains `crm`; new `[functions.crm-invitations]` block. | Exposes the crm schema to PostgREST; registers our function. | P1-01, P1-03 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated (generated file). Now includes the `crm` schema; the CLI (2.121) emits a newer layout (`ComputedFields`). | Types for the crm schema. `deno check` passes. | P1-02 |
+| 2026-10-21 | `supabase/functions/deno.lock` | Adds `jsr:@std/assert` (test-only dependency). | Unit tests for `crm-invitations`. | P1-03 |
