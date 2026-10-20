@@ -12,3 +12,4 @@ need no entry.
 | 2026-10-21 | `supabase/config.toml` | `[api] schemas` gains `crm`; new `[functions.crm-invitations]` block. | Exposes the crm schema to PostgREST; registers our function. | P1-01, P1-03 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated (generated file). Now includes the `crm` schema; the CLI (2.121) emits a newer layout (`ComputedFields`). | Types for the crm schema. `deno check` passes. | P1-02 |
 | 2026-10-21 | `supabase/functions/deno.lock` | Adds `jsr:@std/assert` (test-only dependency). | Unit tests for `crm-invitations`. | P1-03 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated again: adds `crm.audit_log`, `get_audit_log`, `write_audit`. | Audit log types. | P1-08 |

@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01, P1-02, P1-03 and P1-05. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01, P1-02, P1-03, P1-05 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -50,6 +50,37 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
   `min_tier`;
 - the last owner cannot be demoted (upstream guard).
 
+## Audit log (P1-08)
+
+`crm.audit_log` records who changed what, per organization. Schema: `10-05_audit_log.sql`,
+`10-14_audit.sql`, `10-21_audit_triggers.sql`. Tests: `crm_05_audit.test.sql`.
+
+- **What is logged** (by triggers, so every path is covered: crm functions, upstream screens,
+  API keys, the platform): organization created / profile changed / suspended / reactivated /
+  deletion requested or cancelled / 2FA requirement; members joining, deactivated, reactivated,
+  role and lead-scope changes, permission overrides, number access; role permission toggles;
+  invitations created, accepted, rejected, revoked; pack applied, upgraded, items edited or reset.
+  Actions are named `area.verb` (`member.role_changed`); the full list is at the top of
+  `10-21_audit_triggers.sql`.
+- **Who acted**: `crm.write_audit` works it out from the request: a signed-in member (`user`, with
+  their agent id), an API key (`api_key`, the key's id, never the key), the platform
+  (`service`), or nothing (`system`: seeds, migrations, SQL console).
+- **What is stored**: ids, keys and the changed fields (before/after). Never message text, contact
+  phone numbers or tokens. Invitation entries keep the invitee's email; number-access entries keep
+  the organization's own business number.
+- **Append-only**: API roles hold `select` only; a trigger refuses update, delete and truncate even
+  for the table owner. `crm.purge_organizations` is the one exception: a purged organization's
+  entries go with it (DPDP erasure). Deleting an organization any other way fails while it has
+  entries.
+- **Reading**: members holding `audit.view` (Owner and Admin by default) through RLS, or
+  `crm.get_audit_log(org, before_id, limit, area, actor, from, to)`, which pages and adds names.
+  API keys cannot read it. UI: Settings → Activity log.
+- **Writing from later phases**: database changes get a trigger in `10-21`; events the database
+  cannot see (token connects, exports) call `crm.write_audit(org, action, target_type, target_id,
+  details)` from an edge function with the service role. Members and API keys cannot call it.
+- Setting up a new organization's preset roles is not logged permission by permission
+  (`crm.audit_suppress`); the organization's creation is one entry.
+
 ## Operations
 
 | Task | How |
@@ -80,9 +111,16 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
 - **2FA**: the database gate (`require_mfa_for_admins`) is done and tested; there is no
   enrollment UI yet, so the setting is not exposed in the UI (P1-11).
 - **Batch scope**: "batch assignment" waits for the batches table (Phase 6).
-- **Audit**: role changes, invitations and profile edits are not audited yet (P1-08).
+- **Audit**: there is no retention limit and no per-person redaction yet. Erasing one person
+  (DPDP, later phase) must also blank their email in invitation entries, which needs a second
+  controlled exception to append-only, like the purge's.
 - **Pack items** are stored generically; the settings engine (P1-04), custom fields
   (P1-06), pipeline and template phases read their kind from `organization_pack_items`.
-- **Invite email**: the `crm-invitations` function passes its unit tests, and the database
-  side is covered by pgTAP. The full send-an-email run against the local stack was not
-  completed (Docker stopped when C: ran out of space).
+- **Invite email link does not sign people in** (checked end to end on 2026-10-21): both
+  emails arrive (invite for new addresses, sign-in link for existing users), and after
+  sign-in the invitation card, Accept, and the crm role all work. But the link carries the
+  session in the URL fragment (`#access_token=…`), which the UI's PKCE-mode client rejects
+  ("Not a valid PKCE flow url"), so the invitee lands on the login page. Fix proposed, awaiting
+  approval (touches auth): email templates link to the app with `token_hash`, and the app
+  calls `supabase.auth.verifyOtp({ token_hash, type })`
+  (https://supabase.com/docs/guides/auth/auth-email-templates).
