@@ -298,7 +298,21 @@ isOneToOne: false
           }
         },"crm": {
           Tables: {
-            "invitation_roles": {
+            "audit_log": {
+                  Row: {
+                    "action": string,"actor_agent_id": string | null,"actor_api_key_id": string | null,"actor_type": string,"actor_user_id": string | null,"created_at": string,"details": NonNullable<Json>,"id": number,"organization_id": string,"request_id": string | null,"target_id": string | null,"target_type": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_agent_id"?: string | null,"actor_api_key_id"?: string | null,"actor_type": string,"actor_user_id"?: string | null,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: never,"organization_id": string,"request_id"?: string | null,"target_id"?: string | null,"target_type"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"actor_agent_id"?: string | null,"actor_api_key_id"?: string | null,"actor_type"?: string,"actor_user_id"?: string | null,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: never,"organization_id"?: string,"request_id"?: string | null,"target_id"?: string | null,"target_type"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"invitation_roles": {
                   Row: {
                     "created_at": string,"invitation_id": string,"organization_id": string,"role_id": string
                   }
@@ -615,6 +629,11 @@ isOneToOne: false
 "generate_slug":
 { Args: { "p_name": string }; Returns: string
                            },
+"get_audit_log":
+{ Args: { "p_actor"?: string,"p_area"?: string,"p_before_id"?: number,"p_from"?: string,"p_limit"?: number,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
+            }[]
+                           },
 "get_hidden_addresses":
 { Args: Record<PropertyKey, never>; Returns: {
               "address": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
@@ -689,6 +708,9 @@ isOneToOne: false
                            },
 "upgrade_organization_pack":
 { Args: { "p_organization_id": string,"p_version"?: number }; Returns: number
+                           },
+"write_audit":
+{ Args: { "p_action": string,"p_details"?: Json,"p_organization_id": string,"p_target_id"?: string,"p_target_type"?: string }; Returns: undefined
                            }
           }
           Enums: {
