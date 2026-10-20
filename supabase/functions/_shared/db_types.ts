@@ -639,6 +639,11 @@ isOneToOne: false
               "address": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
             }[]
                            },
+"get_my_invitation_roles":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "invitation_id": string,"role_key": string,"role_name": string
+            }[]
+                           },
 "get_my_organization_statuses":
 { Args: Record<PropertyKey, never>; Returns: {
               "can_cancel_deletion": boolean,"name": string,"organization_id": string,"purge_after": string,"status": string,"suspended_reason": string
