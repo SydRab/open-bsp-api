@@ -28,6 +28,13 @@ begin
     -- A deleted agent is a former member: this is what makes marking the row
     -- revoke access rather than merely rename it.
     and a.deleted_at is null
+    -- [crm] A suspended or pending-deletion organization is invisible to
+    -- every policy that goes through here (P1-01, docs/upstream-edits.md).
+    and not exists (
+      select 1 from crm.organization_profiles p
+      where p.organization_id = a.organization_id
+        and p.status <> 'active'
+    )
     and (
       case a.role
         when 'owner' then 3
@@ -53,6 +60,12 @@ begin
     select a.organization_id into org_id
     from public.api_keys a
     where a.key = api_key
+    -- [crm] Same suspension filter as the JWT branch.
+    and not exists (
+      select 1 from crm.organization_profiles p
+      where p.organization_id = a.organization_id
+        and p.status <> 'active'
+    )
     and (
       case (a.role::text)
         when 'owner' then 3
