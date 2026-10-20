@@ -1,7 +1,7 @@
 # Edits to upstream OpenBSP files
 
 Every change we make to a file that came from upstream OpenBSP is listed here, so upstream
-merges can be resolved quickly. Our own code lives in `supabase/schemas/10_crm/`,
+merges can be resolved quickly. Our own code lives in `supabase/schemas/10_crm/`, `supabase/templates/`,
 `supabase/functions/crm-*`, `supabase/tests/`, `packs/`, `scripts/crm/` and `docs/`. Those
 need no entry.
 
@@ -13,3 +13,5 @@ need no entry.
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated (generated file). Now includes the `crm` schema; the CLI (2.121) emits a newer layout (`ComputedFields`). | Types for the crm schema. `deno check` passes. | P1-02 |
 | 2026-10-21 | `supabase/functions/deno.lock` | Adds `jsr:@std/assert` (test-only dependency). | Unit tests for `crm-invitations`. | P1-03 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated again: adds `crm.audit_log`, `get_audit_log`, `write_audit`. | Audit log types. | P1-08 |
+| 2026-10-21 | `supabase/config.toml` | `[auth.email.template.invite]` and `[auth.email.template.magic_link]` point at `supabase/templates/*.html` (new, ours). | Email links go to the UI's `/auth/confirm` with a token hash; the default links' fragment tokens are rejected by the UI's PKCE client. | P1-03 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: adds `crm.get_my_invitation_roles`. | Invitation card role name. | P1-03 |

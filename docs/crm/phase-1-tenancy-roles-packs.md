@@ -96,14 +96,18 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
    deploys migrations, not `config.toml`.
 2. **Set `CRM_APP_URL`** (the UI's URL) for the `crm-invitations` function; it is the
    invite email's redirect and must be in Auth → URL Configuration → Redirect URLs.
-3. **Configure SMTP** (Auth → SMTP) with the transactional email domain; the built-in
+3. **Email templates**: paste `supabase/templates/invite.html` and `magic_link.html` into
+   Auth → Email Templates (Invite user, Magic Link), with the subjects from `config.toml`.
+   Their links go to `<Site URL>/auth/confirm`, so the Site URL must be the UI's URL.
+   Without them, invite links land on the login page instead of signing people in.
+4. **Configure SMTP** (Auth → SMTP) with the transactional email domain; the built-in
    mailer is rate-limited and not for production.
-4. **Review `20261020180900_crm_purge_organizations_cron.sql`**: it schedules irreversible
+5. **Review `20261020180900_crm_purge_organizations_cron.sql`**: it schedules irreversible
    deletion of organizations whose owners requested it 30+ days earlier.
-5. Existing organizations are backfilled by `20261020180800_…`: owners become Owner,
+6. Existing organizations are backfilled by `20261020180800_…`: owners become Owner,
    admins Admin, and plain members **Sales Rep**, so nobody loses what they could do
    before. Owners should then narrow roles (e.g. Viewer, Finance) where needed.
-6. Legal review of the pack's disclaimer text, banned phrases, quiet hours (21:00–09:00)
+7. Legal review of the pack's disclaimer text, banned phrases, quiet hours (21:00–09:00)
    and the marketing frequency cap before the first tenant uses them.
 
 ## Known gaps
@@ -116,11 +120,3 @@ Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.s
   controlled exception to append-only, like the purge's.
 - **Pack items** are stored generically; the settings engine (P1-04), custom fields
   (P1-06), pipeline and template phases read their kind from `organization_pack_items`.
-- **Invite email link does not sign people in** (checked end to end on 2026-10-21): both
-  emails arrive (invite for new addresses, sign-in link for existing users), and after
-  sign-in the invitation card, Accept, and the crm role all work. But the link carries the
-  session in the URL fragment (`#access_token=…`), which the UI's PKCE-mode client rejects
-  ("Not a valid PKCE flow url"), so the invitee lands on the login page. Fix proposed, awaiting
-  approval (touches auth): email templates link to the app with `token_hash`, and the app
-  calls `supabase.auth.verifyOtp({ token_hash, type })`
-  (https://supabase.com/docs/guides/auth/auth-email-templates).
