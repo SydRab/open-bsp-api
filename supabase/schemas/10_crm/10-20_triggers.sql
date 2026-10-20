@@ -129,8 +129,15 @@ execute function crm.after_member_role_change();
 -- Profile validation the check constraints cannot express.
 create function crm.before_write_on_organization_profiles() returns trigger
 language plpgsql
+-- Owner rights: it calls crm.validate_setting_value, which API roles cannot
+-- execute. It only checks and tidies the row being written.
+security definer
 set search_path to ''
 as $$
+declare
+  v_error text;
+  v_registration jsonb;
+  v_pattern text;
 begin
   new.slug := lower(new.slug);
 
@@ -140,6 +147,77 @@ begin
     raise exception 'unknown timezone %', new.timezone
       using errcode = '22023';
   end if;
+
+  -- Business details (P1-07). Blank strings count as not given.
+  new.legal_name := nullif(trim(new.legal_name), '');
+  new.support_email := nullif(lower(trim(new.support_email)), '');
+  new.support_phone := nullif(trim(new.support_phone), '');
+  new.website := nullif(trim(new.website), '');
+
+  if length(new.legal_name) > 200 then
+    raise exception 'legal name is too long' using errcode = '22023';
+  end if;
+  if new.support_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+    raise exception 'invalid support email' using errcode = '22023';
+  end if;
+  if new.support_phone !~ '^\+?[0-9][0-9 ()-]{6,19}$' then
+    raise exception 'invalid support phone' using errcode = '22023';
+  end if;
+  if new.website !~ '^https?://[^\s]{3,200}$' then
+    raise exception 'website must start with http:// or https://' using errcode = '22023';
+  end if;
+
+  if new.address is not null then
+    v_error := crm.validate_setting_value(
+      '{"type": "object", "additionalProperties": false,
+        "properties": {
+          "line1": {"type": "string", "maxLength": 200},
+          "line2": {"type": "string", "maxLength": 200},
+          "city": {"type": "string", "maxLength": 100},
+          "state": {"type": "string", "maxLength": 100},
+          "postal_code": {"type": "string", "pattern": "^[0-9A-Za-z -]{3,12}$"},
+          "country": {"type": "string", "pattern": "^[A-Z]{2}$"}}}',
+      new.address,
+      'address'
+    );
+    if v_error is not null then
+      raise exception '%', v_error using errcode = '22023';
+    end if;
+  end if;
+
+  v_error := crm.validate_setting_value(
+    '{"type": "array", "maxItems": 10, "items": {
+       "type": "object", "required": ["type", "number"], "additionalProperties": false,
+       "properties": {
+         "type": {"type": "string", "enum": ["gstin", "sebi_ra", "sebi_ia", "cin", "udyam", "other"]},
+         "number": {"type": "string", "minLength": 2, "maxLength": 50}}}}',
+    new.registrations,
+    'registrations'
+  );
+  if v_error is not null then
+    raise exception '%', v_error using errcode = '22023';
+  end if;
+
+  -- Official formats, uppercase.
+  new.registrations := coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'type', r->>'type', 'number', upper(trim(r->>'number'))
+    ))
+    from jsonb_array_elements(new.registrations) r
+  ), '[]'::jsonb);
+  for v_registration in select * from jsonb_array_elements(new.registrations) loop
+    v_pattern := case v_registration->>'type'
+      when 'gstin' then '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'
+      when 'sebi_ra' then '^INH[0-9]{9}$'
+      when 'sebi_ia' then '^INA[0-9]{9}$'
+      when 'cin' then '^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$'
+      when 'udyam' then '^UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7}$'
+    end;
+    if v_pattern is not null and (v_registration->>'number') !~ v_pattern then
+      raise exception 'invalid % number', upper(replace(v_registration->>'type', '_', ' '))
+        using errcode = '22023';
+    end if;
+  end loop;
 
   return new;
 end;

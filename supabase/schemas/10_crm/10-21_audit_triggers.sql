@@ -40,6 +40,7 @@ as $$
 declare
   v_before jsonb := '{}'::jsonb;
   v_after jsonb := '{}'::jsonb;
+  v_field text;
 begin
   if tg_op = 'INSERT' then
     perform crm.write_audit(
@@ -70,18 +71,16 @@ begin
     );
   end if;
 
-  if new.slug is distinct from old.slug then
-    v_before := v_before || jsonb_build_object('slug', old.slug);
-    v_after := v_after || jsonb_build_object('slug', new.slug);
-  end if;
-  if new.timezone is distinct from old.timezone then
-    v_before := v_before || jsonb_build_object('timezone', old.timezone);
-    v_after := v_after || jsonb_build_object('timezone', new.timezone);
-  end if;
-  if new.locale is distinct from old.locale then
-    v_before := v_before || jsonb_build_object('locale', old.locale);
-    v_after := v_after || jsonb_build_object('locale', new.locale);
-  end if;
+  -- The fields a tenant edits: profile (P1-01) and business details (P1-07).
+  for v_field in select unnest(array[
+    'slug', 'timezone', 'locale', 'legal_name', 'address', 'support_email',
+    'support_phone', 'website', 'registrations'
+  ]) loop
+    if to_jsonb(new)->v_field is distinct from to_jsonb(old)->v_field then
+      v_before := v_before || jsonb_build_object(v_field, to_jsonb(old)->v_field);
+      v_after := v_after || jsonb_build_object(v_field, to_jsonb(new)->v_field);
+    end if;
+  end loop;
 
   if v_after <> '{}'::jsonb then
     perform crm.write_audit(

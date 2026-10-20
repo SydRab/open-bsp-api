@@ -161,3 +161,12 @@ using (
     or organization_id in (select crm.get_permitted_orgs('members.manage'))
   )
 );
+
+-- Disclaimers (P1-07) ------------------------------------------------------------
+
+alter table crm.disclaimer_versions enable row level security;
+
+-- Every member reads the history; versions are written by crm.set_disclaimer.
+create policy "members can read their orgs disclaimer versions"
+on crm.disclaimer_versions for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

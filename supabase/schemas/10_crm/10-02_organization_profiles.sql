@@ -26,6 +26,17 @@ create table crm.organization_profiles (
   -- Optional 2FA gate (P1-03): when true, owner- and admin-tier members get
   -- no crm permission until their session is aal2.
   require_mfa_for_admins boolean not null default false,
+  -- Business details (P1-07), shown on public pages and receipts. The
+  -- business's own contact details, not a person's. Checked by
+  -- crm.before_write_on_organization_profiles (10-20).
+  legal_name text,
+  -- {line1, line2, city, state, postal_code, country}
+  address jsonb,
+  support_email text,
+  support_phone text,
+  website text,
+  -- [{type: gstin | sebi_ra | sebi_ia | cin | udyam | other, number}]
+  registrations jsonb not null default '[]'::jsonb,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

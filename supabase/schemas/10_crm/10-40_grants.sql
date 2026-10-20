@@ -7,7 +7,11 @@
 grant select on all tables in schema crm to anon, authenticated;
 grant all on all tables in schema crm to service_role;
 
-grant update (slug, timezone, locale) on crm.organization_profiles to authenticated;
+-- Profile (P1-01) and business details (P1-07).
+grant update (
+  slug, timezone, locale,
+  legal_name, address, support_email, support_phone, website, registrations
+) on crm.organization_profiles to authenticated;
 grant update (value) on crm.organization_pack_items to authenticated;
 
 -- Functions: Postgres grants EXECUTE to PUBLIC by default, which would put
@@ -65,3 +69,10 @@ grant execute on function crm.delete_team(uuid) to authenticated;
 grant execute on function crm.set_team_member(uuid, uuid, boolean) to authenticated;
 -- Internal (service_role only): resolve_setting, setting_target,
 -- assert_can_read_settings, validate_setting_value.
+
+-- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
+-- functions as service_role; also members and keys, for previews).
+grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
+grant execute on function crm.set_disclaimer(uuid, text, text, text) to authenticated;
+grant execute on function crm.render_with_disclaimer(uuid, text, text, text) to anon, authenticated;
+-- Internal: current_disclaimer, disclaimer_text_error.
