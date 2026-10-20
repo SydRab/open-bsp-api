@@ -16,3 +16,4 @@ need no entry.
 | 2026-10-21 | `supabase/config.toml` | `[auth.email.template.invite]` and `[auth.email.template.magic_link]` point at `supabase/templates/*.html` (new, ours). | Email links go to the UI's `/auth/confirm` with a token hash; the default links' fragment tokens are rejected by the UI's PKCE client. | P1-03 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: adds `crm.get_my_invitation_roles`. | Invitation card role name. | P1-03 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: settings and teams. | Types. | P1-04 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: business details, disclaimers. | Types. | P1-07 |

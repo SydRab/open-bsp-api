@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01, P1-02, P1-03, P1-04, P1-05 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01, P1-02, P1-03, P1-04, P1-05, P1-07 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -116,6 +116,41 @@ Schema: `10-06_teams.sql`, `10-07_settings.sql`, `10-15_settings.sql`,
 - **Adding a setting**: a new migration inserting into `crm.setting_definitions`. The first
   catalog has organization-level settings only; team/user scopes are tested with a test-only
   definition.
+
+## Business details and disclaimers (P1-07)
+
+Schema: `10-02` (columns), `10-08_disclaimers.sql`, `10-16_disclaimers.sql`,
+`10-23_disclaimer_triggers.sql`. Tests: `crm_07_disclaimers.test.sql`. UI: Settings →
+Organization (business details) and Settings → Disclaimer.
+
+- **Business details** on `crm.organization_profiles`: `legal_name`, `address`
+  (line1, line2, city, state, postal_code, country), `support_email`, `support_phone`,
+  `website`, `registrations` (`gstin`, `sebi_ra`, `sebi_ia`, `cin`, `udyam`, `other`). The
+  validation trigger trims, uppercases registration numbers and checks official formats.
+  Edited with `organization.manage`; changes are audited. Shown on public pages and receipts,
+  **not** in WhatsApp messages (decided 2026-10-21; a SEBI number goes into messages only if
+  legal counsel requires it).
+- **Disclaimers** (`crm.disclaimer_versions`): short (10–60 characters, one line, fits a
+  template footer) and full (20–1000) per language (`en`, `hi`). Every save adds a version;
+  the pack's text (version 0) applies until the first save. `crm.get_disclaimers(org)`,
+  `crm.set_disclaimer(org, kind, locale, text)` (`organization.manage`). Audited as
+  `disclaimer.updated` with the text replaced.
+- **`crm.render_with_disclaimer(org, content_type, text, locale)`** — the one function every
+  sender calls; it returns the text to send and the disclaimer version used (store it with the
+  message as proof).
+
+  | Content type | Disclaimer | When |
+  |---|---|---|
+  | `broadcast`, `digest`, `ai_message`, `payment_confirmation` | short | per `disclaimer.attach_rules` |
+  | `receipt` | full | per `disclaimer.attach_rules` (off by default) |
+  | `public_page`, `disclaimer_reply` | full | always |
+
+  Language: the one given, else the organization's, else English. Never adds the disclaimer
+  twice. Refuses messages over WhatsApp's 4096 characters and content that needs a disclaimer
+  the organization does not have.
+- **Templates**: Meta approves a template's footer in advance. The Disclaimer page shows how
+  many pack templates carry the short disclaimer as footer; re-submitting them after a change
+  is P2-04.
 
 ## Operations
 
