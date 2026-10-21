@@ -20,3 +20,5 @@ need no entry.
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: contacts, custom fields. | Types. | P1-06 |
 | 2026-10-21 | `supabase/seed.sql` | Adds `members` seat caps (free 3, starter 10) to the `billing.tiers_products` insert block. | Same reason as `crm.tier_features` carrying no foreign key to `billing.tiers` (10-18): those tier rows exist only here, so a migration-time insert referencing them fails. | P1-09 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: feature flags, `billing.tiers` Pro row, `members` product. | Types. | P1-09 |
+| 2026-10-21 | `supabase/config.toml` | New `[functions.crm-admin]` block. | Registers the super-admin console's edge function. | P1-10 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: platform admins, platform audit log, support-access grants. | Types. | P1-10 |

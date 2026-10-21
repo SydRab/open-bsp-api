@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01 to P1-09. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01 to P1-10. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -226,17 +226,55 @@ Tests: `crm_09_feature_flags.test.sql`. UI: Settings → Plan & features; locks 
   error at invite time; the trigger is what actually enforces it. A backfill migration seeded
   correct usage for organizations that already had members.
 
+## Super-admin console (P1-10)
+
+Schema: `10-27_admin.sql`, `10-28_admin_resolution.sql`, `10-29_admin_triggers.sql`. Edge
+function: `supabase/functions/crm-admin/`. Tests: `crm_10_admin_console.test.sql`.
+
+- **A platform admin is a separate axis from tenant roles**: `crm.platform_admins` (global,
+  not tied to any organization). Being an owner or admin of a tenant grants nothing here, and
+  being a platform admin grants nothing inside a tenant beyond what this section defines.
+- **Every admin action goes through `crm-admin`** (`POST /functions/v1/crm-admin`,
+  `{ "action": "<name>", ... }`), never a crm function granted to `authenticated`. The function
+  verifies the caller's own JWT, self-checks `crm.is_platform_admin()` with the caller's own
+  client, and only then switches to the service role. A non-admin or unauthenticated caller
+  never reaches a database function at all.
+- **Bootstrapping the first admin is manual, on purpose** — see "Operations" below. Every admin
+  after that is granted through the console by an existing one (`crm.grant_platform_admin`, by
+  email). The last admin cannot be revoked.
+- **Tenant list**: `crm.list_tenants(search)` — name, slug, status, tier, seat usage/cap, pack
+  and its latest available version.
+- **Two functions exist only because a bare service-role call fails otherwise** — confirmed by
+  hand, see the comment at the top of `10-28_admin_resolution.sql`:
+  `crm.require_permission` (and so `crm.get_settings`'s own `can_edit` column) ultimately calls
+  `public.get_authorized_orgs`, which raises `"authentication required"` with no JWT and no
+  api-key header. `crm.set_organization_tier` and `crm.admin_upgrade_organization_pack` are
+  thin, admin-gated replacements for the two tenant-facing actions this console needs
+  (`billing.subscriptions` has no tenant-facing setter anyway; `crm.upgrade_organization_pack`
+  does, gated by `organization.manage`). Everything else the console needs
+  (`crm.get_features`, `crm.apply_pack`, `suspend_organization`, `set_organization_feature`,
+  `set_feature_kill_switch`, …) already tolerates a bare service-role caller.
+- **Time-limited, logged support-access grants** (`crm.support_access_grants`, 1 hour to 1
+  week): `crm.grant_support_access`/`revoke_support_access`. While active, an admin may call
+  `crm.admin_get_tenant_config` (profile, resolved settings, roles and their permissions,
+  feature status, pack items) and `crm.admin_get_audit_log` for that one organization —
+  **deliberately never message or contact content**. The organization can see grants made
+  against it (`crm.support_access_grants` RLS) and the grant/revoke in its own audit log.
+- **`crm.platform_audit_log`** is a second, separate append-only log (not organization-scoped,
+  so it is not `crm.audit_log`) for actions with no single tenant — admin grants/revokes, the
+  kill switch — and also records which admin did something to one organization (tier changes,
+  pack upgrades, suspensions, feature overrides), alongside that organization's own entry.
+
 ## Operations
 
 | Task | How |
 |---|---|
-| Suspend / reactivate a tenant | `select crm.suspend_organization('<org>', 'reason');` / `crm.reactivate_organization('<org>')` as service_role (super-admin console in P1-10). |
+| **Bootstrap the first platform admin** | One-time, by hand, as a human running SQL against the target environment (never a migration, never a UI action): `insert into crm.platform_admins (user_id) values ((select id from auth.users where email = '<your email>'));` |
+| Everything else admin-console-related | Through the console (`crm-admin`), once signed in as a platform admin: list tenants, suspend/reactivate, grant/clear a feature override, flip the kill switch, change an organization's tier, upgrade its pack, grant/revoke support access, read a supported organization's configuration and audit log, grant/revoke another platform admin. |
+| Suspend / reactivate a tenant without the console | `select crm.suspend_organization('<org>', 'reason');` / `crm.reactivate_organization('<org>')` as service_role. |
 | Hard delete | Owners request it in the UI (`crm.request_organization_deletion`); after 30 days the daily cron `crm-purge-deleted-organizations` runs `crm.purge_organizations()`. |
 | Add a permission | New migration: insert into `crm.permissions`, into `crm.preset_role_permissions` for presets that should have it, and into `crm.role_permissions` for every org's `owner` role (snippet at the top of `20261020180500_crm_permission_catalog.sql`). |
 | Publish a pack version | Add `packs/<key>/v<n+1>.json`, run `deno run --allow-read --allow-write scripts/crm/pack-to-sql.ts packs/<key>/v<n+1>.json`. Tenants upgrade with `crm.upgrade_organization_pack`. Never edit a published file: the migration refuses a changed checksum. |
-| Grant/clear a feature override | `select crm.set_organization_feature('<org>', '<key>', true, 'reason', expires_at);` / `crm.clear_organization_feature('<org>', '<key>')` as service_role. |
-| Emergency-disable a feature | `select crm.set_feature_kill_switch('<key>', true);` as service_role; `false` to restore. |
-| Move an organization's tier | `update billing.subscriptions set tier_id = '<free\|starter\|pro>' where organization_id = '<org>';` as service_role — no UI yet (P1-10). |
 
 ## Before deploying to staging or production
 
@@ -260,6 +298,9 @@ Tests: `crm_09_feature_flags.test.sql`. UI: Settings → Plan & features; locks 
 8. **Seed the billing catalog** (`billing.tiers`, `products`, `tiers_products`, `plans`):
    today it exists only in `supabase/seed.sql`, which production never runs. Without it, every
    organization resolves as "no subscription" — unrestricted features, no seat cap.
+9. **Bootstrap the first platform admin**: `insert into crm.platform_admins (user_id) values
+   ((select id from auth.users where email = '<your email>'));` — by hand, once, as whoever is
+   setting up the environment. Every admin after that is granted through the console.
 
 ## Known gaps
 
@@ -276,5 +317,12 @@ Tests: `crm_09_feature_flags.test.sql`. UI: Settings → Plan & features; locks 
   `members` product). Staging/production need this catalog seeded out of band before tier
   assignment or seat caps mean anything there; until then every organization resolves as
   "no subscription" (every feature unrestricted, no seat cap).
-- **No tier-change or override UI**: both are service-role SQL today (Operations table above);
-  the super-admin console (P1-10) is where they get a screen.
+- **Support access is configuration/audit-only**: a grant does not unlock message or contact
+  content; reading actual conversations for support is a separate, later decision (noted
+  2026-10-21 when P1-09's "configuration and audit log, never content" scope was approved).
+- **No way yet to downgrade a module an organization already turned on** when its tier changes:
+  a pack-defaulted module that was true stays true in its own setting row even after
+  `crm.set_organization_tier` moves the organization to a plan that no longer includes it;
+  `crm.has_feature` already reports it as unavailable, and Rules & modules already shows it
+  locked, so nothing is actually usable — but the stored `true` could confuse a future reader
+  that only checks the setting, not the feature.
