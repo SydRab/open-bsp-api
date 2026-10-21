@@ -24,6 +24,14 @@ enabled = true
 authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = true
 
+# [crm] TOTP 2FA (P1-11): off by default in Supabase Auth. CI does not deploy
+# this config — enable the same in the dashboard (Authentication > Providers
+# > Multi-Factor Authentication) for staging/production, or `supabase config
+# push`, before P1-11 ships anywhere real.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 # [crm] Email templates (P1-03): links go to the app's /auth/confirm page with
 # a token hash instead of /auth/v1/verify, whose fragment tokens the UI's PKCE
 # client rejects. CI does not deploy this config: paste the same templates in
