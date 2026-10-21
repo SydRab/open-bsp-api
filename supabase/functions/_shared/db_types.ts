@@ -550,6 +550,34 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"platform_admins": {
+                  Row: {
+                    "granted_at": string,"granted_by": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "granted_at"?: string,"granted_by"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "granted_at"?: string,"granted_by"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"platform_audit_log": {
+                  Row: {
+                    "action": string,"actor_user_id": string,"created_at": string,"details": NonNullable<Json>,"id": number,"target_id": string | null,"target_type": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_user_id": string,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: never,"target_id"?: string | null,"target_type"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"actor_user_id"?: string,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: never,"target_id"?: string | null,"target_type"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"preset_role_permissions": {
                   Row: {
                     "permission": string,"role_key": string
@@ -676,6 +704,20 @@ isOneToOne: false
       referencedColumns: ["organization_id","id"]
     }
                   ]
+                },"support_access_grants": {
+                  Row: {
+                    "admin_id": string,"expires_at": string,"granted_at": string,"id": string,"organization_id": string,"reason": string,"revoked_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_id": string,"expires_at": string,"granted_at"?: string,"id"?: string,"organization_id": string,"reason": string,"revoked_at"?: string | null
+                  }
+                  Update: {
+                    "admin_id"?: string,"expires_at"?: string,"granted_at"?: string,"id"?: string,"organization_id"?: string,"reason"?: string,"revoked_at"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"team_members": {
                   Row: {
                     "agent_id": string,"created_at": string,"organization_id": string,"team_id": string
@@ -750,7 +792,18 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "apply_default_pack":
+            "admin_get_audit_log":
+{ Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
+              "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
+            }[]
+                           },
+"admin_get_tenant_config":
+{ Args: { "p_admin_id": string,"p_organization_id": string }; Returns: Json
+                           },
+"admin_upgrade_organization_pack":
+{ Args: { "p_admin_id": string,"p_organization_id": string,"p_version": number }; Returns: number
+                           },
+"apply_default_pack":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
 "apply_pack":
@@ -904,6 +957,11 @@ isOneToOne: false
 "get_permitted_orgs":
 { Args: { "p_permission": string }; Returns: string[]
                            },
+"get_platform_audit_log":
+{ Args: { "p_before_id"?: number,"p_limit"?: number }; Returns: {
+              "action": string,"actor_email": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_type": string
+            }[]
+                           },
 "get_setting":
 { Args: { "p_agent_id"?: string,"p_key": string,"p_organization_id": string }; Returns: Json
                            },
@@ -911,6 +969,20 @@ isOneToOne: false
 { Args: { "p_organization_id": string }; Returns: {
               "can_edit": boolean,"category": string,"description": string,"is_locked": boolean,"key": string,"label": string,"schema": Json,"scopes": (string)[],"sort_order": number,"source": string,"team_conflict": boolean,"tenant_value": Json,"value": Json
             }[]
+                           },
+"get_support_access":
+{ Args: { "p_organization_id"?: string }; Returns: {
+              "active": boolean,"admin_email": string,"admin_id": string,"expires_at": string,"granted_at": string,"id": string,"organization_id": string,"organization_name": string,"reason": string,"revoked_at": string
+            }[]
+                           },
+"grant_platform_admin":
+{ Args: { "p_email": string,"p_granted_by": string }; Returns: undefined
+                           },
+"grant_support_access":
+{ Args: { "p_admin_id": string,"p_hours"?: number,"p_organization_id": string,"p_reason": string }; Returns: string
+                           },
+"has_active_support_access":
+{ Args: { "p_admin_id": string,"p_organization_id": string }; Returns: boolean
                            },
 "has_feature":
 { Args: { "p_feature_key": string,"p_organization_id": string }; Returns: boolean
@@ -920,6 +992,19 @@ isOneToOne: false
                            },
 "invite_member":
 { Args: { "p_email": string,"p_organization_id": string,"p_role_key": string }; Returns: string
+                           },
+"is_platform_admin":
+{ Args: { "p_user_id"?: string }; Returns: boolean
+                           },
+"list_platform_admins":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "email": string,"granted_at": string,"granted_by": string,"granted_by_email": string,"user_id": string
+            }[]
+                           },
+"list_tenants":
+{ Args: { "p_search"?: string }; Returns: {
+              "created_at": string,"latest_pack_version": number,"name": string,"organization_id": string,"pack_key": string,"pack_version": number,"seats_cap": number,"seats_used": number,"slug": string,"status": string,"tier_id": string,"tier_name": string
+            }[]
                            },
 "my_permissions":
 { Args: { "p_organization_id": string }; Returns: string[]
@@ -952,6 +1037,9 @@ isOneToOne: false
 "require_permission":
 { Args: { "p_organization_id": string,"p_permission": string }; Returns: undefined
                            },
+"require_platform_admin":
+{ Args: { "p_admin_id": string }; Returns: undefined
+                           },
 "reset_pack_item":
 { Args: { "p_item_id": string }; Returns: undefined
                            },
@@ -968,6 +1056,12 @@ isOneToOne: false
                            },
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
+                           },
+"revoke_platform_admin":
+{ Args: { "p_revoked_by": string,"p_user_id": string }; Returns: undefined
+                           },
+"revoke_support_access":
+{ Args: { "p_admin_id": string,"p_grant_id": string }; Returns: undefined
                            },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
@@ -992,6 +1086,9 @@ isOneToOne: false
                            },
 "set_organization_feature":
 { Args: { "p_enabled": boolean,"p_expires_at"?: string,"p_feature_key": string,"p_organization_id": string,"p_reason"?: string }; Returns: undefined
+                           },
+"set_organization_tier":
+{ Args: { "p_admin_id": string,"p_organization_id": string,"p_tier_id": string }; Returns: undefined
                            },
 "set_require_mfa_for_admins":
 { Args: { "p_organization_id": string,"p_required": boolean }; Returns: undefined
@@ -1025,6 +1122,9 @@ isOneToOne: false
                            },
 "write_audit":
 { Args: { "p_action": string,"p_details"?: Json,"p_organization_id": string,"p_target_id"?: string,"p_target_type"?: string }; Returns: undefined
+                           },
+"write_platform_audit":
+{ Args: { "p_action": string,"p_admin_id": string,"p_details"?: Json,"p_target_id"?: string,"p_target_type"?: string }; Returns: undefined
                            }
           }
           Enums: {
