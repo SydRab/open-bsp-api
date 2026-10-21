@@ -20,6 +20,10 @@ export const FIELD_TYPES = [
   "select",
   "multi_select",
   "boolean",
+  "long_text",
+  "email",
+  "phone",
+  "url",
 ];
 
 const KEY = /^[a-z][a-z0-9_]*$/;

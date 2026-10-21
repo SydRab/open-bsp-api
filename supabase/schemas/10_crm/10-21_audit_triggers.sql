@@ -422,6 +422,26 @@ begin
     return null;
   end if;
 
+  -- Custom fields (P1-06) have their own actions: edited, archived, restored.
+  if new.kind = 'custom_field' then
+    perform crm.write_audit(
+      new.organization_id,
+      case
+        when coalesce((new.value->>'archived')::boolean, false)
+          and not coalesce((old.value->>'archived')::boolean, false)
+          then 'custom_field.archived'
+        when coalesce((old.value->>'archived')::boolean, false)
+          and not coalesce((new.value->>'archived')::boolean, false)
+          then 'custom_field.restored'
+        else 'custom_field.updated'
+      end,
+      'custom_field',
+      new.item_key,
+      jsonb_build_object('before', old.value, 'after', new.value)
+    );
+    return null;
+  end if;
+
   perform crm.write_audit(
     new.organization_id,
     case

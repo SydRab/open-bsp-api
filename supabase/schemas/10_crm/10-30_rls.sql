@@ -108,15 +108,17 @@ using (organization_id in (select public.get_authorized_orgs('member')));
 -- Column grants (10-40) limit this to `value`. Compliance and module items
 -- are the pack layer of settings (P1-04): tenants change those through
 -- crm.set_setting, so a pack upgrade never meets a tenant edit there.
+-- Custom fields change through crm.update_custom_field (P1-06), which checks
+-- the definition.
 create policy "managers can edit their orgs pack items"
 on crm.organization_pack_items for update to authenticated
 using (
   organization_id in (select crm.get_permitted_orgs('organization.manage'))
-  and kind not in ('compliance', 'module')
+  and kind not in ('compliance', 'module', 'custom_field')
 )
 with check (
   organization_id in (select crm.get_permitted_orgs('organization.manage'))
-  and kind not in ('compliance', 'module')
+  and kind not in ('compliance', 'module', 'custom_field')
 );
 
 -- Audit log (P1-08) -----------------------------------------------------------
@@ -170,3 +172,58 @@ alter table crm.disclaimer_versions enable row level security;
 create policy "members can read their orgs disclaimer versions"
 on crm.disclaimer_versions for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Contacts and custom field values (P1-06) ---------------------------------------
+
+alter table crm.contacts enable row level security;
+alter table crm.contact_addresses enable row level security;
+
+-- A contact is visible when the caller holds contacts.view AND can see at
+-- least one of the person's upstream contact rows. That subquery runs under
+-- the caller's own row level security on public.contacts_addresses, so
+-- number scope (crm.member_address_access) and personal connections apply
+-- exactly as they do upstream.
+create policy "members can read contacts they can see"
+on crm.contacts for select to authenticated, anon
+using (
+  organization_id in (select crm.get_permitted_orgs('contacts.view'))
+  and exists (
+    select 1
+    from crm.contact_addresses ca
+    join public.contacts_addresses c
+      on c.organization_id = ca.organization_id
+     and c.service = ca.service
+     and c.address = ca.address
+    where ca.contact_id = contacts.id
+  )
+);
+
+-- Column grants (10-40) limit this to custom_fields; values are checked by
+-- crm.before_write_on_contacts.
+create policy "editors can update contacts they can see"
+on crm.contacts for update to authenticated
+using (
+  organization_id in (select crm.get_permitted_orgs('contacts.edit'))
+  and exists (
+    select 1
+    from crm.contact_addresses ca
+    join public.contacts_addresses c
+      on c.organization_id = ca.organization_id
+     and c.service = ca.service
+     and c.address = ca.address
+    where ca.contact_id = contacts.id
+  )
+)
+with check (organization_id in (select crm.get_permitted_orgs('contacts.edit')));
+
+create policy "members can read the addresses of contacts they can see"
+on crm.contact_addresses for select to authenticated, anon
+using (
+  organization_id in (select crm.get_permitted_orgs('contacts.view'))
+  and exists (
+    select 1 from public.contacts_addresses c
+    where c.organization_id = contact_addresses.organization_id
+      and c.service = contact_addresses.service
+      and c.address = contact_addresses.address
+  )
+);

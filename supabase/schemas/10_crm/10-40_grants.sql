@@ -76,3 +76,15 @@ grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
 grant execute on function crm.set_disclaimer(uuid, text, text, text) to authenticated;
 grant execute on function crm.render_with_disclaimer(uuid, text, text, text) to anon, authenticated;
 -- Internal: current_disclaimer, disclaimer_text_error.
+
+-- Contacts and custom fields (P1-06).
+grant update (custom_fields) on crm.contacts to authenticated;
+grant execute on function crm.create_custom_field(uuid, text, text, text, jsonb, jsonb, boolean) to authenticated;
+grant execute on function crm.update_custom_field(uuid, jsonb, jsonb, boolean) to authenticated;
+grant execute on function crm.archive_custom_field(uuid, boolean) to authenticated;
+grant execute on function crm.set_contact_fields(uuid, jsonb) to authenticated;
+grant execute on function crm.filter_contacts(uuid, jsonb, int, int) to anon, authenticated;
+grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text) to anon, authenticated;
+-- Used by the functions above, which run as the caller.
+grant execute on function crm.clean_custom_fields(jsonb) to anon, authenticated;
+grant execute on function crm.custom_field_matches(jsonb, jsonb) to anon, authenticated;
