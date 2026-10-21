@@ -245,3 +245,19 @@ using (true);
 create policy "members can read their orgs feature overrides"
 on crm.organization_features for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Super-admin console (P1-10) ---------------------------------------------------
+
+alter table crm.platform_admins enable row level security;
+alter table crm.platform_audit_log enable row level security;
+alter table crm.support_access_grants enable row level security;
+
+-- Deliberately no select policy for anon/authenticated on platform_admins or
+-- platform_audit_log: who the platform admins are, and what they have done,
+-- is platform-internal. Only service_role (the crm-admin edge function,
+-- after checking crm.is_platform_admin) reads them.
+
+-- The organization can see grants made against it: who looked, when, why.
+create policy "org managers can see support-access grants against their org"
+on crm.support_access_grants for select to authenticated, anon
+using (organization_id in (select crm.get_permitted_orgs('organization.manage')));

@@ -126,3 +126,12 @@ entrypoint = "./functions/slack-dispatcher/index.ts"
 verify_jwt = true
 import_map = "./functions/deno.json"
 entrypoint = "./functions/crm-invitations/index.ts"
+
+# P1-10: the super-admin console's one endpoint. Every request carries a
+# user JWT (verify_jwt catches a missing/invalid one before the function
+# even runs); the function itself checks crm.is_platform_admin() on that
+# caller before using the service role for anything.
+[functions.crm-admin]
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/crm-admin/index.ts"

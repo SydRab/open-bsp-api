@@ -97,3 +97,9 @@ grant execute on function crm.custom_field_matches(jsonb, jsonb) to anon, authen
 grant execute on function crm.has_feature(uuid, text) to anon, authenticated;
 grant execute on function crm.require_feature(uuid, text) to anon, authenticated;
 grant execute on function crm.get_features(uuid) to anon, authenticated;
+
+-- Super-admin console (P1-10). Every function here is reachable only by
+-- service_role (the crm-admin edge function) via the blanket grant above,
+-- except is_platform_admin, which the UI also calls directly to decide
+-- whether to show the console at all (self-check only; see its own guard).
+grant execute on function crm.is_platform_admin(uuid) to anon, authenticated;
