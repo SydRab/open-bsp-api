@@ -120,6 +120,35 @@ as $$
     );
 $$;
 
+-- Whether the caller would hold organization.manage-tier access in this org
+-- if they verified a TOTP code right now (P1-11). crm.get_permitted_orgs
+-- silently drops an org when aal2 is required but missing — indistinguishable
+-- from "you don't have this role at all" — so the UI calls this separately
+-- to decide between a generic "no permission" state and a 2FA step-up
+-- prompt. Read-only, no write path; mirrors get_permitted_orgs' own aal2
+-- condition exactly, just inverted and scoped to one org/caller.
+create function crm.needs_mfa_step_up(p_organization_id uuid) returns boolean
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select exists (
+    select 1
+    from public.agents a
+    join crm.member_roles mr on mr.agent_id = a.id
+    join crm.roles r on r.id = mr.role_id
+    join crm.organization_profiles p on p.organization_id = a.organization_id
+    where a.organization_id = p_organization_id
+      and a.user_id = auth.uid()
+      and a.deleted_at is null
+      and p.status = 'active'
+      and p.require_mfa_for_admins
+      and r.tier <> 'member'
+      and coalesce(auth.jwt()->>'aal', 'aal1') <> 'aal2'
+  );
+$$;
+
 -- The caller's active, non-deleted agent row in an organization, or null.
 create function crm.caller_agent(p_organization_id uuid) returns public.agents
 language sql

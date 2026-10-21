@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(56);
+select plan(64);
 
 select tests.create_user('owner@test.local');
 select tests.create_user('admin@test.local');
@@ -29,8 +29,8 @@ values ('test.layered', 'test', 'Layered', '{"type": "integer", "minimum": 1, "m
 
 select is(
   (select count(*)::int from crm.setting_definitions where key not like 'test.%'),
-  20,
-  'the first catalog has 20 settings'
+  22,
+  'the first catalog has 22 settings (incl. branding, P1-11)'
 );
 select is(
   (select count(*)::int from crm.setting_definitions
@@ -112,6 +112,60 @@ select is(
   crm.validate_setting_value('{"type": "boolean"}', '"yes"'),
   'value must be a boolean',
   'types are enforced'
+);
+
+-- Branding (P1-11) ------------------------------------------------------------------
+
+select ok(
+  crm.validate_setting_value(
+    (select schema from crm.setting_definitions where key = 'branding.logo_url'),
+    '"https://example.com/logo.png"'
+  ) is null,
+  'a valid logo URL passes'
+);
+select ok(
+  crm.validate_setting_value(
+    (select schema from crm.setting_definitions where key = 'branding.logo_url'),
+    '"not-a-url"'
+  ) is not null,
+  'a logo value without a scheme is refused'
+);
+select ok(
+  crm.validate_setting_value(
+    (select schema from crm.setting_definitions where key = 'branding.logo_url'),
+    '""'
+  ) is null,
+  'an empty logo URL is valid (means unset)'
+);
+select ok(
+  crm.validate_setting_value(
+    (select schema from crm.setting_definitions where key = 'branding.primary_color'),
+    '"blue"'
+  ) is not null,
+  'a non-hex color is refused'
+);
+
+select tests.as_user('owner@test.local');
+select results_eq(
+  format($$ select value, source from crm.get_settings(%L) where key = 'branding.primary_color' $$, :'org'),
+  $$ values (to_jsonb(''::text), 'platform'::text) $$,
+  'branding defaults to unset (platform default), no pack item backs it'
+);
+select lives_ok(
+  format($$ select crm.set_setting(%L, 'branding.primary_color', '"#2563eb"') $$, :'org'),
+  'the owner sets a primary color'
+);
+select results_eq(
+  format($$ select value, source from crm.get_settings(%L) where key = 'branding.primary_color' $$, :'org'),
+  $$ values ('"#2563eb"'::jsonb, 'tenant'::text) $$,
+  'the organization value is read back'
+);
+select tests.as_user('rep@test.local');
+select throws_ok(
+  format($$ select crm.set_setting(%L, 'branding.logo_url', '"https://example.com/l.png"') $$, :'org'),
+  '42501',
+  null,
+  'a sales rep cannot change branding (needs organization.manage)'
 );
 
 -- Layers: pack and organization -----------------------------------------------------

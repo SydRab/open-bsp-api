@@ -23,6 +23,7 @@ grant execute on all functions in schema crm to service_role;
 -- Used inside RLS policies and by the UI.
 grant execute on function crm.get_permitted_orgs(text) to anon, authenticated;
 grant execute on function crm.has_permission(uuid, text) to anon, authenticated;
+grant execute on function crm.needs_mfa_step_up(uuid) to authenticated;
 grant execute on function crm.get_hidden_addresses() to anon, authenticated;
 grant execute on function crm.tier_rank(public.role) to anon, authenticated;
 grant execute on function crm.my_permissions(uuid) to authenticated;

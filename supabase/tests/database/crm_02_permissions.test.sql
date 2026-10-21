@@ -3,7 +3,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(37);
+select plan(42);
 
 select tests.create_user('owner@test.local');
 select tests.create_user('admin@test.local');
@@ -247,6 +247,19 @@ select tests.as_user('admin@test.local', 'aal2');
 select ok(crm.has_permission(:'org', 'members.view'), 'an admin with 2FA keeps them');
 select tests.as_user('viewer@test.local');
 select ok(crm.has_permission(:'org', 'members.view'), 'member-tier roles are not gated');
+
+-- Step-up signal (P1-11): tells the UI "you'd have it if you verified" apart
+-- from "you don't have this role at all" — get_permitted_orgs can't.
+select tests.as_user('admin@test.local');
+select ok(crm.needs_mfa_step_up(:'org'), 'an ungated admin needs a step-up');
+select tests.as_user('admin@test.local', 'aal2');
+select ok(not crm.needs_mfa_step_up(:'org'), 'an aal2 admin needs no step-up');
+select tests.as_user('owner@test.local');
+select ok(crm.needs_mfa_step_up(:'org'), 'owner tier is gated too, not just admin');
+select tests.as_user('viewer@test.local');
+select ok(not crm.needs_mfa_step_up(:'org'), 'a member-tier role never needs a step-up');
+select tests.as_user('outsider@test.local');
+select ok(not crm.needs_mfa_step_up(:'org'), 'a non-member needs no step-up (they have no access to begin with)');
 
 -- API keys ------------------------------------------------------------------------------
 
