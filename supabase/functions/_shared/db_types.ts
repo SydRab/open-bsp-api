@@ -312,6 +312,40 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"contact_addresses": {
+                  Row: {
+                    "address": string,"contact_id": string,"created_at": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address": string,"contact_id": string,"created_at"?: string,"organization_id": string,"service": Database["public"]['Enums']["service"]
+                  }
+                  Update: {
+                    "address"?: string,"contact_id"?: string,"created_at"?: string,"organization_id"?: string,"service"?: Database["public"]['Enums']["service"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contact_addresses_contact_fkey"
+      columns: ["organization_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"contacts": {
+                  Row: {
+                    "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"id": string,"locale": string | null,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"id"?: string,"locale"?: string | null,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"id"?: string,"locale"?: string | null,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"disclaimer_versions": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": string,"kind": string,"locale": string,"organization_id": string,"text": string,"version": number
@@ -668,6 +702,9 @@ isOneToOne: false
 "apply_pack":
 { Args: { "p_organization_id": string,"p_pack_key": string,"p_version": number }; Returns: undefined
                            },
+"archive_custom_field":
+{ Args: { "p_archived"?: boolean,"p_field_id": string }; Returns: undefined
+                           },
 "assert_can_edit_role":
 { Args: { "p_role_id": string }; Returns: {
               "created_at": string,
@@ -711,6 +748,12 @@ isOneToOne: false
 "cancel_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"clean_custom_fields":
+{ Args: { "p_values": Json }; Returns: Json
+                           },
+"create_custom_field":
+{ Args: { "p_entity": string,"p_key": string,"p_label": Json,"p_options"?: Json,"p_organization_id": string,"p_required"?: boolean,"p_type": string }; Returns: string
+                           },
 "create_preset_roles":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -721,6 +764,15 @@ isOneToOne: false
 { Args: { "p_kind": string,"p_locale": string,"p_organization_id": string }; Returns: {
               "source": string,"text": string,"version": number
             }[]
+                           },
+"custom_field_definition":
+{ Args: { "p_entity": string,"p_key": string,"p_organization_id": string }; Returns: Json
+                           },
+"custom_field_matches":
+{ Args: { "p_condition": Json,"p_values": Json }; Returns: boolean
+                           },
+"custom_field_value_error":
+{ Args: { "p_def": Json,"p_old"?: Json,"p_value": Json }; Returns: string
                            },
 "deactivate_member":
 { Args: { "p_agent_id": string }; Returns: undefined
@@ -736,6 +788,28 @@ isOneToOne: false
                            },
 "disclaimer_text_error":
 { Args: { "p_kind": string,"p_text": string }; Returns: string
+                           },
+"field_definition_error":
+{ Args: { "p_def": Json }; Returns: string
+                           },
+"filter_contacts":
+{ Args: { "p_conditions"?: Json,"p_limit"?: number,"p_offset"?: number,"p_organization_id": string }; Returns: {
+              "created_at": string,
+"custom_fields": NonNullable<Json>,
+"display_name": string | null,
+"id": string,
+"locale": string | null,
+"organization_id": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "contacts"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"format_custom_field":
+{ Args: { "p_entity": string,"p_key": string,"p_locale"?: string,"p_organization_id": string,"p_value": Json }; Returns: string
                            },
 "generate_slug":
 { Args: { "p_name": string }; Returns: string
@@ -827,6 +901,9 @@ isOneToOne: false
 "revoke_invitation":
 { Args: { "p_invitation_id": string }; Returns: undefined
                            },
+"set_contact_fields":
+{ Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
+                           },
 "set_disclaimer":
 { Args: { "p_kind": string,"p_locale": string,"p_organization_id": string,"p_text": string }; Returns: number
                            },
@@ -862,6 +939,9 @@ isOneToOne: false
                            },
 "tier_rank":
 { Args: { "tier": Database["public"]['Enums']["role"] }; Returns: number
+                           },
+"update_custom_field":
+{ Args: { "p_field_id": string,"p_label": Json,"p_options": Json,"p_required": boolean }; Returns: undefined
                            },
 "upgrade_organization_pack":
 { Args: { "p_organization_id": string,"p_version"?: number }; Returns: number
