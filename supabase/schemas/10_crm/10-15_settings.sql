@@ -427,6 +427,15 @@ begin
     raise exception '%', v_error using errcode = '22023';
   end if;
 
+  -- Modules are also features (P1-09): a plan can leave one out entirely,
+  -- which turning the setting on cannot work around. Turning one off always
+  -- works, and resetting (crm.reset_setting) is unaffected.
+  if p_key like 'modules.%' and p_value = 'true'::jsonb
+    and not crm.has_feature(p_organization_id, substring(p_key from 9)) then
+    raise exception 'your plan does not include this module'
+      using errcode = '42501';
+  end if;
+
   insert into crm.setting_values (
     organization_id, setting_key, scope, team_id, agent_id, value, updated_by
   ) values (

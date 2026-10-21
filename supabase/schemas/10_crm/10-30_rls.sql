@@ -227,3 +227,21 @@ using (
       and c.address = contact_addresses.address
   )
 );
+
+-- Feature flags and plan entitlements (P1-09) ------------------------------------
+
+alter table crm.features enable row level security;
+alter table crm.tier_features enable row level security;
+alter table crm.organization_features enable row level security;
+
+create policy "signed-in users can read the feature catalog"
+on crm.features for select to authenticated, anon
+using (true);
+
+create policy "signed-in users can read tier entitlements"
+on crm.tier_features for select to authenticated, anon
+using (true);
+
+create policy "members can read their orgs feature overrides"
+on crm.organization_features for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

@@ -88,3 +88,12 @@ grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text)
 -- Used by the functions above, which run as the caller.
 grant execute on function crm.clean_custom_fields(jsonb) to anon, authenticated;
 grant execute on function crm.custom_field_matches(jsonb, jsonb) to anon, authenticated;
+
+-- Feature flags and plan entitlements (P1-09). Tables are read-only via the
+-- blanket select grant above (10-30 RLS narrows rows); writes go through
+-- these functions. set_organization_feature, clear_organization_feature and
+-- set_feature_kill_switch are platform only (service_role, by the blanket
+-- grant above) and check auth.role() themselves too.
+grant execute on function crm.has_feature(uuid, text) to anon, authenticated;
+grant execute on function crm.require_feature(uuid, text) to anon, authenticated;
+grant execute on function crm.get_features(uuid) to anon, authenticated;

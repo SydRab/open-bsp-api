@@ -86,6 +86,11 @@ begin
   perform crm.require_permission(p_organization_id, 'members.invite');
   v_caller := crm.caller_agent(p_organization_id);
 
+  -- A friendly check for the inviting admin (P1-09): the seat is only truly
+  -- consumed, and the limit truly enforced, when the invitee accepts
+  -- (crm.track_member_usage, 10-25).
+  perform billing.check_limit(p_organization_id, 'members');
+
   if v_email is null or v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
     raise exception 'invalid email address'
       using errcode = '22023';

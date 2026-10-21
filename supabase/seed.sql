@@ -34,18 +34,24 @@ insert into billing.tiers (id, name, level) values
 -- Tier limits (no row = no limit, and the UI shows no quota for it)
 -- cap: ceiling for counter/gauge, floor for balance; null = unlimited
 -- starter caps above plan included to allow paid overage
+-- 'members' (crm P1-09): seat caps for 'free'/'starter' live here, next to
+-- their sibling caps, for the same reason crm.tier_features carries no
+-- foreign key to billing.tiers — those tier rows do not exist yet when
+-- migrations run. 'pro' gets no row: unlimited seats.
 insert into billing.tiers_products (tier_id, product_id, interval, cap) values
   ('free',    'messages',   'month',    5000),
   ('free',    'conversations', 'month', null),
   ('free',    'storage',    'lifetime', 1),
   ('free',    'ai_credits', 'lifetime', 0),
   ('free',    'organizations_addresses', 'lifetime', null),
+  ('free',    'members',    'lifetime', 3),
 
   ('starter', 'messages',   'month',    100000),
   ('starter', 'conversations', 'month', null),
   ('starter', 'storage',    'lifetime', 100),
   ('starter', 'ai_credits', 'lifetime', 0),
-  ('starter', 'organizations_addresses', 'lifetime', null);
+  ('starter', 'organizations_addresses', 'lifetime', null),
+  ('starter', 'members',    'lifetime', 10);
 
 -- Plans (min_tier: minimum tier level required)
 insert into billing.plans (id, min_tier, price, billing_cycle, is_default) values

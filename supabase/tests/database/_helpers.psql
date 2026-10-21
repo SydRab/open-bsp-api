@@ -99,6 +99,11 @@ begin
   perform tests.as_user(p_owner_email);
   insert into public.organizations (id, name) values (v_id, p_name);
   perform tests.as_postgres();
+  -- Test orgs land on Free by billing.initialize_subscription; most of this
+  -- suite is not testing seat/usage caps (P1-09's own test does, deliberately,
+  -- without this helper), so put them on Pro (no billing.tiers_products rows
+  -- at all) to avoid tripping one by coincidence.
+  update billing.subscriptions set tier_id = 'pro' where organization_id = v_id;
   return v_id;
 end;
 $$;
