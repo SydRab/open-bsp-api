@@ -1,6 +1,3 @@
-Connecting to 127.0.0.1 54322
-Generated TypeScript is unformatted. Format it with:
-  npx oxfmt <generated-file.ts>
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
