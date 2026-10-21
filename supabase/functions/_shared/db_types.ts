@@ -360,6 +360,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"features": {
+                  Row: {
+                    "category": string,"created_at": string,"description": string | null,"key": string,"kill_switch": boolean,"label": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category"?: string,"created_at"?: string,"description"?: string | null,"key": string,"kill_switch"?: boolean,"label": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "category"?: string,"created_at"?: string,"description"?: string | null,"key"?: string,"kill_switch"?: boolean,"label"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"invitation_roles": {
                   Row: {
                     "created_at": string,"invitation_id": string,"organization_id": string,"role_id": string
@@ -432,6 +446,26 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "roles"
       referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"organization_features": {
+                  Row: {
+                    "created_at": string,"enabled": boolean,"expires_at": string | null,"feature_key": string,"id": string,"organization_id": string,"reason": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"enabled": boolean,"expires_at"?: string | null,"feature_key": string,"id"?: string,"organization_id": string,"reason"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"enabled"?: boolean,"expires_at"?: string | null,"feature_key"?: string,"id"?: string,"organization_id"?: string,"reason"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "organization_features_feature_key_fkey"
+      columns: ["feature_key"]
+isOneToOne: false
+      referencedRelation: "features"
+      referencedColumns: ["key"]
     }
                   ]
                 },"organization_pack_items": {
@@ -676,6 +710,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"tier_features": {
+                  Row: {
+                    "created_at": string,"feature_key": string,"tier_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"feature_key": string,"tier_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"feature_key"?: string,"tier_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tier_features_feature_key_fkey"
+      columns: ["feature_key"]
+isOneToOne: false
+      referencedRelation: "features"
+      referencedColumns: ["key"]
+    }
+                  ]
                 },"vertical_packs": {
                   Row: {
                     "created_at": string,"description": string | null,"is_default": boolean,"key": string,"name": string
@@ -751,6 +805,9 @@ isOneToOne: false
 "clean_custom_fields":
 { Args: { "p_values": Json }; Returns: Json
                            },
+"clear_organization_feature":
+{ Args: { "p_feature_key": string,"p_organization_id": string }; Returns: undefined
+                           },
 "create_custom_field":
 { Args: { "p_entity": string,"p_key": string,"p_label": Json,"p_options"?: Json,"p_organization_id": string,"p_required"?: boolean,"p_type": string }; Returns: string
                            },
@@ -824,6 +881,11 @@ isOneToOne: false
               "kind": string,"locale": string,"source": string,"text": string,"version": number
             }[]
                            },
+"get_features":
+{ Args: { "p_organization_id": string }; Returns: {
+              "category": string,"description": string,"enabled": boolean,"key": string,"label": string,"override_expires_at": string,"override_reason": string,"source": string,"unlocks_at_tier": string
+            }[]
+                           },
 "get_hidden_addresses":
 { Args: Record<PropertyKey, never>; Returns: {
               "address": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
@@ -849,6 +911,9 @@ isOneToOne: false
 { Args: { "p_organization_id": string }; Returns: {
               "can_edit": boolean,"category": string,"description": string,"is_locked": boolean,"key": string,"label": string,"schema": Json,"scopes": (string)[],"sort_order": number,"source": string,"team_conflict": boolean,"tenant_value": Json,"value": Json
             }[]
+                           },
+"has_feature":
+{ Args: { "p_feature_key": string,"p_organization_id": string }; Returns: boolean
                            },
 "has_permission":
 { Args: { "p_organization_id": string,"p_permission": string }; Returns: boolean
@@ -881,6 +946,9 @@ isOneToOne: false
 "request_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: string
                            },
+"require_feature":
+{ Args: { "p_feature_key": string,"p_organization_id": string }; Returns: undefined
+                           },
 "require_permission":
 { Args: { "p_organization_id": string,"p_permission": string }; Returns: undefined
                            },
@@ -907,6 +975,9 @@ isOneToOne: false
 "set_disclaimer":
 { Args: { "p_kind": string,"p_locale": string,"p_organization_id": string,"p_text": string }; Returns: number
                            },
+"set_feature_kill_switch":
+{ Args: { "p_enabled": boolean,"p_feature_key": string }; Returns: undefined
+                           },
 "set_member_address_access":
 { Args: { "p_address": string,"p_agent_id": string,"p_allowed": boolean,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
                            },
@@ -918,6 +989,9 @@ isOneToOne: false
                            },
 "set_member_role":
 { Args: { "p_agent_id": string,"p_role_key": string }; Returns: undefined
+                           },
+"set_organization_feature":
+{ Args: { "p_enabled": boolean,"p_expires_at"?: string,"p_feature_key": string,"p_organization_id": string,"p_reason"?: string }; Returns: undefined
                            },
 "set_require_mfa_for_admins":
 { Args: { "p_organization_id": string,"p_required": boolean }; Returns: undefined
