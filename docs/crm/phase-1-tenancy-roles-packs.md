@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01, P1-02, P1-03, P1-04, P1-05, P1-07 and P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01 to P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -152,6 +152,37 @@ Organization (business details) and Settings → Disclaimer.
   many pack templates carry the short disclaimer as footer; re-submitting them after a change
   is P2-04.
 
+## Contacts and custom fields (P1-06)
+
+Schema: `10-09_contacts.sql`, `10-17_custom_fields.sql`, `10-24_contacts_triggers.sql`.
+Tests: `crm_08_custom_fields.test.sql`. UI: Settings → Custom fields; contact page → Details.
+
+- **Person-level contacts** (`crm.contacts`, `crm.contact_addresses`): one person per
+  (organization, service, address), whichever of the organization's numbers they wrote to.
+  Created by a trigger on `public.contacts_addresses` (named from the channel's profile name),
+  backfilled by `20261021082015_crm_backfill_contacts.sql`. Internal chat (`local`) has none.
+  Cross-channel merging (WhatsApp + Telegram) is P3-02 / P7-02.
+- **Visibility**: `contacts.view` and at least one of the person's upstream contact rows visible
+  to the caller — the check runs under the caller's own RLS on `public.contacts_addresses`, so
+  number scope and personal connections apply exactly as upstream.
+- **Definitions** are `organization_pack_items` of kind `custom_field`: the pack's fields plus the
+  organization's own (no `pack_value`). Types: text, long_text, number, date, boolean, select,
+  multi_select, email, phone, url. Managed only through `crm.create_custom_field`,
+  `update_custom_field` (labels, required, options), `archive_custom_field`
+  (`organization.manage`); direct edits are blocked. Keys and types never change; fields and
+  options are archived, never removed. Audited as `custom_field.created/updated/archived/
+  restored`. Pack upgrades keep an organization's edits (the usual customized-item rule).
+- **Values**: `crm.contacts.custom_fields` (jsonb, GIN-indexed), checked by a trigger on every
+  write (known field, type, option, archived rules). `crm.set_contact_fields(contact, values)`
+  is the form save: `contacts.edit`, merges values (null clears), enforces **required** — only
+  here, so contacts created automatically by inbound messages are never blocked (decided
+  2026-10-21). Value edits are not in the audit log (the contact timeline, P3-11, will show them).
+- **Filters**: `crm.filter_contacts(org, conditions)` — conditions `{field, op, value}` with
+  `eq, neq, in, contains, gt, gte, lt, lte, is_empty, is_not_empty`, combined with AND; runs as
+  the caller (RLS applies). The base for segments (P4-03).
+- **Templates**: `crm.format_custom_field(org, entity, key, value, locale)` turns stored values
+  into display text (option labels in the contact's language; Yes/No, हाँ/नहीं).
+
 ## Operations
 
 | Task | How |
@@ -189,5 +220,5 @@ Organization (business details) and Settings → Disclaimer.
 - **Audit**: there is no retention limit and no per-person redaction yet. Erasing one person
   (DPDP, later phase) must also blank their email in invitation entries, which needs a second
   controlled exception to append-only, like the purge's.
-- **Pack items** are stored generically; custom fields
-  (P1-06), pipeline and template phases read their kind from `organization_pack_items`.
+- **Pack items** are stored generically; pipeline stages, qualification questions and
+  templates are read from `organization_pack_items` by the pipeline and template phases.

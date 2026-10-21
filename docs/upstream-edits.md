@@ -17,3 +17,4 @@ need no entry.
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: adds `crm.get_my_invitation_roles`. | Invitation card role name. | P1-03 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: settings and teams. | Types. | P1-04 |
 | 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: business details, disclaimers. | Types. | P1-07 |
+| 2026-10-21 | `supabase/functions/_shared/db_types.ts` | Regenerated: contacts, custom fields. | Types. | P1-06 |
