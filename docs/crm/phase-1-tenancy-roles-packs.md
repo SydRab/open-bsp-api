@@ -1,6 +1,6 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01 to P1-08. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01 to P1-09. Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 
@@ -183,6 +183,49 @@ Tests: `crm_08_custom_fields.test.sql`. UI: Settings → Custom fields; contact 
 - **Templates**: `crm.format_custom_field(org, entity, key, value, locale)` turns stored values
   into display text (option labels in the contact's language; Yes/No, हाँ/नहीं).
 
+## Feature flags and plan entitlements (P1-09)
+
+Schema: `10-18_feature_flags.sql`, `10-19_feature_resolution.sql`, `10-25_member_seats.sql`,
+`10-26_feature_audit_triggers.sql`. Catalog: `20261021112530_crm_feature_catalog.sql`.
+Tests: `crm_09_feature_flags.test.sql`. UI: Settings → Plan & features; locks on Rules & modules.
+
+- **`crm.features`** is the platform catalog — today the eleven modules, same keys and labels
+  as the `modules.*` settings (P1-04). Each has a **kill switch**
+  (`crm.set_feature_kill_switch`, platform only, emergency off for everyone — not org-scoped,
+  so not in the audit log).
+- **`crm.tier_features`** maps a billing tier (`billing.subscriptions.tier_id`) to the features
+  it includes. **No foreign key to `billing.tiers`**: that catalog is environment data
+  (`billing.tiers`/`products`/`tiers_products` live only in `supabase/seed.sql`, confirmed by
+  hand — a migration-time insert FK'd to `billing.tiers('free')` fails, since migrations run
+  before seed.sql), so `crm.tier_features` works with whatever tier ids
+  `billing.subscriptions` actually carries.
+- **`crm.organization_features`** holds per-tenant overrides (a beta, a comp, a block), with a
+  reason and an optional expiry — platform only
+  (`crm.set_organization_feature`/`clear_organization_feature`), audited.
+- **`crm.has_feature(org, key)`** resolves **kill switch → override → tier**; an organization
+  with **no subscription at all** gets every feature (the same fallback `billing.check_limit`
+  uses for usage caps). `crm.require_feature` raises "your plan does not include …".
+  `crm.get_features(org)` adds `source` and, for a feature not included, the lowest tier that
+  would unlock it — the resolver the UI uses.
+- **Modules are plan × switch**: `crm.set_setting` refuses turning a `modules.<key>` setting on
+  when `crm.has_feature(org, key)` is false; turning one off and resetting are unaffected. A
+  pack can still default a module's *setting* to true regardless of tier (the Trading
+  Institute pack does, for several Starter-only modules) — the feature layer is what actually
+  gates it; Rules & modules shows the switch locked either way.
+- **Tiers** (approved 2026-10-21): **Free** = inbox, contacts, pipeline. **Starter** adds
+  broadcasts, sequences, webinars, payments, classroom, telegram. **Pro** (new
+  `billing.tiers` row, level 2, no price — pricing is a business decision) adds ai_agents,
+  news_digest.
+- **Member seats** reuse billing's usage/cap machinery: a new `members` product (`billing.products`,
+  kind `gauge`), with caps in `supabase/seed.sql` (free 3, starter 10 — same no-FK reason as
+  `crm.tier_features`; Pro has no row, meaning unlimited). `crm.track_member_usage`
+  (`public.agents`, mirrors `billing.update_account_usage`) keeps the gauge in step with active
+  human members (`user_id` set, `deleted_at` null) and checks the cap on any new-or-revived
+  active member — including revival, unlike a reconnecting WhatsApp account, since a person is
+  always available to tell "no". `crm.invite_member` checks the cap early too, for a friendly
+  error at invite time; the trigger is what actually enforces it. A backfill migration seeded
+  correct usage for organizations that already had members.
+
 ## Operations
 
 | Task | How |
@@ -191,6 +234,9 @@ Tests: `crm_08_custom_fields.test.sql`. UI: Settings → Custom fields; contact 
 | Hard delete | Owners request it in the UI (`crm.request_organization_deletion`); after 30 days the daily cron `crm-purge-deleted-organizations` runs `crm.purge_organizations()`. |
 | Add a permission | New migration: insert into `crm.permissions`, into `crm.preset_role_permissions` for presets that should have it, and into `crm.role_permissions` for every org's `owner` role (snippet at the top of `20261020180500_crm_permission_catalog.sql`). |
 | Publish a pack version | Add `packs/<key>/v<n+1>.json`, run `deno run --allow-read --allow-write scripts/crm/pack-to-sql.ts packs/<key>/v<n+1>.json`. Tenants upgrade with `crm.upgrade_organization_pack`. Never edit a published file: the migration refuses a changed checksum. |
+| Grant/clear a feature override | `select crm.set_organization_feature('<org>', '<key>', true, 'reason', expires_at);` / `crm.clear_organization_feature('<org>', '<key>')` as service_role. |
+| Emergency-disable a feature | `select crm.set_feature_kill_switch('<key>', true);` as service_role; `false` to restore. |
+| Move an organization's tier | `update billing.subscriptions set tier_id = '<free\|starter\|pro>' where organization_id = '<org>';` as service_role — no UI yet (P1-10). |
 
 ## Before deploying to staging or production
 
@@ -211,6 +257,9 @@ Tests: `crm_08_custom_fields.test.sql`. UI: Settings → Custom fields; contact 
    before. Owners should then narrow roles (e.g. Viewer, Finance) where needed.
 7. Legal review of the pack's disclaimer text, banned phrases, quiet hours (21:00–09:00)
    and the marketing frequency cap before the first tenant uses them.
+8. **Seed the billing catalog** (`billing.tiers`, `products`, `tiers_products`, `plans`):
+   today it exists only in `supabase/seed.sql`, which production never runs. Without it, every
+   organization resolves as "no subscription" — unrestricted features, no seat cap.
 
 ## Known gaps
 
@@ -222,3 +271,10 @@ Tests: `crm_08_custom_fields.test.sql`. UI: Settings → Custom fields; contact 
   controlled exception to append-only, like the purge's.
 - **Pack items** are stored generically; pipeline stages, qualification questions and
   templates are read from `organization_pack_items` by the pipeline and template phases.
+- **Billing catalog**: `billing.tiers`/`products`/`tiers_products`/`plans` exist only in
+  `supabase/seed.sql` (dev data) except the rows P1-09 added by migration (`pro` tier,
+  `members` product). Staging/production need this catalog seeded out of band before tier
+  assignment or seat caps mean anything there; until then every organization resolves as
+  "no subscription" (every feature unrestricted, no seat cap).
+- **No tier-change or override UI**: both are service-role SQL today (Operations table above);
+  the super-admin console (P1-10) is where they get a screen.
