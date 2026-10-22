@@ -786,6 +786,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"webhook_events": {
+                  Row: {
+                    "attempts": number,"created_at": string,"dedupe_key": string,"id": string,"last_attempt_at": string | null,"processed_at": string | null,"processing_error": string | null,"raw_body": string,"received_at": string,"service": Database["public"]['Enums']["service"],"signature_valid": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"dedupe_key": string,"id"?: string,"last_attempt_at"?: string | null,"processed_at"?: string | null,"processing_error"?: string | null,"raw_body": string,"received_at"?: string,"service": Database["public"]['Enums']["service"],"signature_valid": boolean
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"dedupe_key"?: string,"id"?: string,"last_attempt_at"?: string | null,"processed_at"?: string | null,"processing_error"?: string | null,"raw_body"?: string,"received_at"?: string,"service"?: Database["public"]['Enums']["service"],"signature_valid"?: boolean
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -854,6 +868,11 @@ isOneToOne: false
       } },
 "cancel_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"claim_webhook_event":
+{ Args: { "p_id": string }; Returns: {
+              "attempts": number,"raw_body": string
+            }[]
                            },
 "clean_custom_fields":
 { Args: { "p_values": Json }; Returns: Json
@@ -1020,6 +1039,9 @@ isOneToOne: false
 "purge_organizations":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"purge_webhook_events":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "reactivate_organization":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -1030,6 +1052,9 @@ isOneToOne: false
 { Args: { "p_content_type": string,"p_locale"?: string,"p_organization_id": string,"p_text": string }; Returns: {
               "attached": boolean,"disclaimer_kind": string,"disclaimer_locale": string,"disclaimer_version": number,"text": string
             }[]
+                           },
+"replay_webhook_event":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "request_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: string

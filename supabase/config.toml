@@ -80,6 +80,14 @@ verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/whatsapp-dispatcher/index.ts"
 
+# [crm] P2-01: processes crm.webhook_events rows asynchronously. Invoked by
+# pg_cron (process-pending-webhook-events), never by Meta directly — same
+# verify_jwt=false + manual service-role bearer check as whatsapp-dispatcher.
+[functions.whatsapp-webhook-processor]
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/whatsapp-webhook-processor/index.ts"
+
 # Connector services deploy the generic webhook/dispatcher under their own
 # slug (the dispatcher trigger routes by `/{service}-dispatcher`); the
 # generic code derives the service from the slug.

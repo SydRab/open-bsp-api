@@ -261,3 +261,12 @@ alter table crm.support_access_grants enable row level security;
 create policy "org managers can see support-access grants against their org"
 on crm.support_access_grants for select to authenticated, anon
 using (organization_id in (select crm.get_permitted_orgs('organization.manage')));
+
+-- Webhook hardening (P2-01) -------------------------------------------------------
+
+alter table crm.webhook_events enable row level security;
+
+-- Deliberately no select policy for anon/authenticated: raw webhook payloads
+-- can span several tenants at once and are platform infrastructure, not
+-- tenant-readable data. Only service_role (the webhook handler and
+-- whatsapp-webhook-processor) reads or writes them.

@@ -242,6 +242,91 @@ export type WebhookValueUserIdUpdate = {
   user_id_update: WebhookUserIdUpdate[];
 };
 
+// [crm] P2-01. https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/message_template_status_update
+export type WebhookTemplateStatusUpdate = {
+  event:
+    | "APPROVED"
+    | "ARCHIVED"
+    | "UNARCHIVED"
+    | "DELETED"
+    | "DISABLED"
+    | "FLAGGED"
+    | "IN_APPEAL"
+    | "LIMIT_EXCEEDED"
+    | "LOCKED"
+    | "PAUSED"
+    | "PENDING"
+    | "REINSTATED"
+    | "PENDING_DELETION"
+    | "REJECTED";
+  message_template_id: number;
+  message_template_name: string;
+  message_template_language: string;
+  reason:
+    | "ABUSIVE_CONTENT"
+    | "CATEGORY_NOT_AVAILABLE"
+    | "INCORRECT_CATEGORY"
+    | "INVALID_FORMAT"
+    | "NONE"
+    | "PROMOTIONAL"
+    | "SCAM"
+    | "TAG_CONTENT_MISMATCH"
+    | null;
+  message_template_category?: "MARKETING" | "UTILITY" | "AUTHENTICATION";
+  disable_info?: { disable_date: string };
+  other_info?: { title: string; description: string };
+  rejection_info?: { reason: string; recommendation: string };
+};
+
+// [crm] P2-01. https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/message_template_quality_update
+export type WebhookTemplateQualityUpdate = {
+  previous_quality_score: "GREEN" | "YELLOW" | "RED" | "UNKNOWN";
+  new_quality_score: "GREEN" | "YELLOW" | "RED" | "UNKNOWN";
+  message_template_id: number;
+  message_template_name: string;
+  message_template_language: string;
+};
+
+// [crm] P2-01. https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/phone_number_quality_update
+// current_limit/old_limit are deprecated (Feb 2026) in favor of
+// max_daily_conversations_per_business, kept for older payloads.
+export type WebhookPhoneNumberQualityUpdate = {
+  display_phone_number: string;
+  event: "ONBOARDING" | "THROUGHPUT_UPGRADE";
+  current_limit?:
+    | "TIER_50"
+    | "TIER_250"
+    | "TIER_2K"
+    | "TIER_10K"
+    | "TIER_100K"
+    | "TIER_NOT_SET"
+    | "TIER_UNLIMITED";
+  old_limit?:
+    | "TIER_50"
+    | "TIER_250"
+    | "TIER_2K"
+    | "TIER_10K"
+    | "TIER_100K"
+    | "TIER_NOT_SET"
+    | "TIER_UNLIMITED";
+  max_daily_conversations_per_business?: string;
+};
+
+// [crm] P2-01. https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/phone_number_name_update
+export type WebhookPhoneNumberNameUpdate = {
+  display_phone_number: string;
+  decision: "APPROVED" | "REJECTED" | "PENDING" | "DEFERRED";
+  requested_verified_name: string;
+  rejection_reason:
+    | "NAME_EMPLOYEE_ISSUE"
+    | "NAME_INDIVIDUAL_ISSUE"
+    | "NAME_ENDCLIENT_NOTRELATED"
+    | "NAME_FORMAT_UNACCEPTABLE"
+    | "NAME_NOT_CONSISTENT"
+    | "UNKNOWN"
+    | null;
+};
+
 // Change object that discriminates based on field value
 export type WebhookChange =
   | {
@@ -273,6 +358,23 @@ export type WebhookChange =
   | {
     field: "user_id_update";
     value: WebhookValueUserIdUpdate;
+  }
+  // [crm] P2-01
+  | {
+    field: "message_template_status_update";
+    value: WebhookTemplateStatusUpdate;
+  }
+  | {
+    field: "message_template_quality_update";
+    value: WebhookTemplateQualityUpdate;
+  }
+  | {
+    field: "phone_number_quality_update";
+    value: WebhookPhoneNumberQualityUpdate;
+  }
+  | {
+    field: "phone_number_name_update";
+    value: WebhookPhoneNumberNameUpdate;
   };
 
 // Entry object that contains one or more changes
