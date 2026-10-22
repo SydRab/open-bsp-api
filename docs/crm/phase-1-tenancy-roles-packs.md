@@ -1,6 +1,8 @@
 # Phase 1: tenancy, roles, invitations, vertical packs
 
-Covers P1-01 to P1-10. Design: [ADR 0002](../adr/0002-tenancy-model.md).
+Covers P1-01 to P1-12 (Phase 1 is complete — P1-11's frontend shell and P1-12's RLS test suite
+are documented in full in `SYSTEM_BLUEPRINT_AND_GUIDE.md` at the repo root instead of here, since
+neither is really about tenancy/roles/packs). Design: [ADR 0002](../adr/0002-tenancy-model.md).
 Schema: `supabase/schemas/10_crm/`. Tests: `supabase/tests/database/crm_*.test.sql`
 (`npx supabase test db`) and `scripts/crm/pack_test.ts` (`deno test --allow-read scripts/crm`).
 

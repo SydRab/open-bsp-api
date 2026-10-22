@@ -16,3 +16,17 @@ jobs:
       - run: deno fmt --check
       - run: cd supabase/functions && deno lint && deno check .
       - run: cd plugin && deno lint && deno check .
+
+  # [crm] P1-12: the pgTAP suite (tenant isolation, roles, every crm feature)
+  # previously ran only on a developer's machine. Mirrors local dev exactly
+  # (same CLI, same `db reset` + `test db`) rather than a lighter hand-rolled
+  # Postgres-only job, so CI never drifts from what `db reset` actually does.
+  db-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - run: supabase test db
