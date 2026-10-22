@@ -6,22 +6,57 @@ import type {
   WhatsAppOrganizationAddressExtra,
 } from "../_shared/supabase.ts";
 import { ContentfulStatusCode } from "jsr:@hono/hono/utils/http-status";
+import {
+  getWhatsAppAccessToken,
+  setWhatsAppAccessToken,
+} from "../_shared/whatsapp_credentials.ts";
 
 const API_VERSION = "v24.0";
 const APP_ID = Deno.env.get("META_APP_ID");
 const APP_SECRET = Deno.env.get("META_APP_SECRET");
 
+// [crm] P2-02: mock credential exchange, for developing against this flow
+// before Meta Business Verification clears (or any time real Meta
+// credentials aren't configured). Set META_APP_ID=mock locally (any value
+// for META_APP_SECRET; it's never checked) -- this is just one more entry
+// in the existing pipe-separated META_APP_ID list, so it costs no new env
+// var or config shape. Every one of the 5 Graph API calls below checks for
+// this sentinel at its own top and returns a canned response instead of
+// calling graph.facebook.com; the real path below each check is completely
+// unchanged, so switching to real credentials later is a config change, not
+// a code change.
+export const MOCK_APP_ID = "mock";
+export const MOCK_ACCESS_TOKEN = "mock-access-token";
+// A caller can request the forced-error branch by setting `code` to this
+// value (the frontend's mock dialog does, when the user picks "simulate
+// error") -- `code` is the one input available before any mock token exists.
+export const MOCK_ERROR_CODE = "mock-error";
+
 /** Normalize phone number to digits only (e.g., "+54 9 260 423 7115" -> "5492604237115") */
-function normalizePhoneNumber(phone: string): string {
+export function normalizePhoneNumber(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
 // Step 1
-async function getBusinessAccessToken(
+export async function getBusinessAccessToken(
   app_id: string,
   app_secret: string,
   code: string,
 ): Promise<string> {
+  if (app_id === MOCK_APP_ID) {
+    if (code === MOCK_ERROR_CODE) {
+      throw new HTTPException(502, {
+        message: "Mock signup error (simulated Graph API failure)",
+        cause: {
+          error: { message: "Simulated failure", type: "MockError" },
+        },
+      });
+    }
+
+    log.info("Mock mode: returning a fake business access token");
+    return MOCK_ACCESS_TOKEN;
+  }
+
   const response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/oauth/access_token?client_id=${app_id}&client_secret=${app_secret}&code=${code}`,
   );
@@ -37,12 +72,17 @@ async function getBusinessAccessToken(
 }
 
 // Step 2
-async function postSubscribeToWebhooks(
+export async function postSubscribeToWebhooks(
   business_access_token: string,
   waba_id: string,
   url?: string,
   token?: string,
 ): Promise<boolean> {
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: skipping the real webhook subscription call");
+    return true;
+  }
+
   let response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/${waba_id}/subscribed_apps`,
     {
@@ -91,11 +131,16 @@ async function postSubscribeToWebhooks(
 }
 
 // Step 3
-async function postRegisterPhoneNumber(
+export async function postRegisterPhoneNumber(
   business_access_token: string,
   phone_number_id: string,
   pin: string,
 ): Promise<boolean> {
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: skipping the real phone registration call");
+    return true;
+  }
+
   const response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/${phone_number_id}/register`,
     {
@@ -121,7 +166,7 @@ async function postRegisterPhoneNumber(
   return (await response.json()).success;
 }
 
-async function getPhoneNumber(
+export async function getPhoneNumber(
   business_access_token: string,
   phone_number_id: string,
 ): Promise<{
@@ -131,6 +176,20 @@ async function getPhoneNumber(
   quality_rating: string;
   verified_name: string;
 }> {
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: returning fake phone number data");
+    return {
+      code_verification_status: "VERIFIED",
+      // 555-0100 is the reserved fictional US number block (as used in
+      // film/TV) -- deliberately not a real Meta "555" sandbox test number,
+      // so it can never be mistaken for one.
+      display_phone_number: "+1 555 0100",
+      id: phone_number_id,
+      quality_rating: "GREEN",
+      verified_name: "Mock Test Business",
+    };
+  }
+
   const response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/${phone_number_id}`,
     {
@@ -153,10 +212,15 @@ async function getPhoneNumber(
  * names only the WABA. The flow onboards one app number, so anything but
  * exactly one is a WABA we cannot read the choice from.
  */
-async function getWabaPhoneNumberId(
+export async function getWabaPhoneNumberId(
   business_access_token: string,
   waba_id: string,
 ): Promise<string> {
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: returning a fake phone number id for the WABA");
+    return `mock-phone-${waba_id}`;
+  }
+
   const response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/${waba_id}/phone_numbers?fields=id`,
     {
@@ -183,7 +247,7 @@ async function getWabaPhoneNumberId(
   return data[0].id;
 }
 
-async function postInitDataSync(
+export async function postInitDataSync(
   business_access_token: string,
   phone_number_id: string,
   type: "contacts" | "messages",
@@ -192,6 +256,14 @@ async function postInitDataSync(
   request_id: string;
 }> {
   log.info(`Initiating app data sync for ${phone_number_id} ${type}`);
+
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: skipping the real data sync call");
+    return {
+      messaging_product: "whatsapp",
+      request_id: `mock-request-${type}`,
+    };
+  }
 
   const syncTypeMap = {
     contacts: "smb_app_state_sync",
@@ -367,11 +439,11 @@ export async function performEmbeddedSignup(
         waba_id: payload.waba_id,
         business_id: payload.business_id,
         flow_type: payload.flow_type,
-        access_token: business_access_token,
         phone_number: normalizePhoneNumber(phone_number.display_phone_number),
         verified_name: phone_number.verified_name,
         callback_url: payload.callback_url || null,
         verify_token: payload.verify_token || null,
+        is_mock: app_id === MOCK_APP_ID,
       },
     })
     .select()
@@ -383,6 +455,15 @@ export async function performEmbeddedSignup(
       cause: error,
     });
   }
+
+  // The token itself goes to Vault, not into the row above -- see
+  // _shared/whatsapp_credentials.ts.
+  await setWhatsAppAccessToken(
+    client,
+    payload.organization_id,
+    payload.phone_number_id,
+    business_access_token,
+  );
 
   log.info("Account connected", ctx);
 
@@ -456,11 +537,16 @@ export async function performEmbeddedSignup(
   return data;
 }
 
-async function deregisterPhoneNumber(
+export async function deregisterPhoneNumber(
   business_access_token: string,
   phone_number_id: string,
 ): Promise<boolean> {
   log.info(`Deregistering phone number: ${phone_number_id}`);
+
+  if (business_access_token === MOCK_ACCESS_TOKEN) {
+    log.info("Mock mode: skipping the real deregister call");
+    return true;
+  }
 
   const response = await fetch(
     `https://graph.facebook.com/${API_VERSION}/${phone_number_id}/deregister`,
@@ -508,7 +594,12 @@ export async function deleteSignup(
     });
   }
 
-  await deregisterPhoneNumber(extra.access_token || "", phone_number_id);
+  const access_token = await getWhatsAppAccessToken(
+    client,
+    organization_id,
+    phone_number_id,
+  );
+  await deregisterPhoneNumber(access_token, phone_number_id);
 
   const { data } = await client
     .from("organizations_addresses")

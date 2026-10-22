@@ -27,10 +27,9 @@ import {
   uploadToStorage,
 } from "./media.ts";
 import { whatsappToMarkdown } from "./markdown.ts";
+import { getWhatsAppAccessToken } from "./whatsapp_credentials.ts";
 
 const API_VERSION = "v24.0";
-const DEFAULT_ACCESS_TOKEN = Deno.env.get("META_SYSTEM_USER_ACCESS_TOKEN") ||
-  "";
 
 /**
  * Queries the database for organization addresses and returns a map.
@@ -1110,9 +1109,15 @@ export async function processWhatsAppWebhookPayload(
       const orgAddress = orgAddressMap.get(message.organization_address)!;
 
       try {
+        const access_token = await getWhatsAppAccessToken(
+          client,
+          orgAddress.organization_id,
+          message.organization_address,
+        );
+
         return await downloadMediaItem({
           organization_id: orgAddress.organization_id,
-          access_token: orgAddress.extra?.access_token || DEFAULT_ACCESS_TOKEN,
+          access_token,
           message,
           client,
         });

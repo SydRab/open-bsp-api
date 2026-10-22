@@ -994,6 +994,9 @@ isOneToOne: false
               "active": boolean,"admin_email": string,"admin_id": string,"expires_at": string,"granted_at": string,"id": string,"organization_id": string,"organization_name": string,"reason": string,"revoked_at": string
             }[]
                            },
+"get_whatsapp_access_token":
+{ Args: { "p_address": string,"p_organization_id": string }; Returns: string
+                           },
 "grant_platform_admin":
 { Args: { "p_email": string,"p_granted_by": string }; Returns: undefined
                            },
@@ -1129,6 +1132,9 @@ isOneToOne: false
                            },
 "set_team_member":
 { Args: { "p_agent_id": string,"p_member": boolean,"p_team_id": string }; Returns: undefined
+                           },
+"set_whatsapp_access_token":
+{ Args: { "p_access_token": string,"p_address": string,"p_organization_id": string }; Returns: undefined
                            },
 "setting_target":
 { Args: { "p_key": string,"p_organization_id": string,"p_scope": string,"p_target": string }; Returns: Record<string, unknown>

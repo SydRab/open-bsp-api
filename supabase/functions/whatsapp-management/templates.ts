@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import * as log from "../_shared/logger.ts";
 import { HTTPException } from "jsr:@hono/hono/http-exception";
 import { ContentfulStatusCode } from "jsr:@hono/hono/utils/http-status";
+import { getWhatsAppAccessToken } from "../_shared/whatsapp_credentials.ts";
 
 const API_VERSION = "v24.0";
 
@@ -13,7 +14,7 @@ async function getBusinessCredentials(
 ): Promise<{ waba_id: string; access_token: string }> {
   const { data, error } = await client
     .from("organizations_addresses")
-    .select("extra->>waba_id, extra->>access_token")
+    .select("extra->>waba_id")
     .eq("organization_id", organization_id)
     .eq("address", organization_address)
     .single();
@@ -26,7 +27,14 @@ async function getBusinessCredentials(
     });
   }
 
-  return data;
+  // [crm] P2-02: the token lives in Supabase Vault, not in extra.
+  const access_token = await getWhatsAppAccessToken(
+    client,
+    organization_id,
+    organization_address,
+  );
+
+  return { waba_id: data.waba_id, access_token };
 }
 
 export async function listTemplates(

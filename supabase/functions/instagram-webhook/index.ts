@@ -11,6 +11,7 @@ import {
   type InstagramContactAddressExtra,
   type InstagramEvent,
   type InstagramMessage,
+  type InstagramOrganizationAddressExtra,
   type InstagramReferral,
   type InstagramWebhookPayload,
   type MessageInsert,
@@ -642,9 +643,13 @@ async function processMessage(request: Request): Promise<Response> {
   // Fire all Graph fetches in parallel — no awaits inside the event loop.
   const fetchedProfiles = await Promise.all(
     fetchTasks.map(async (c) => {
+      // [crm] P2-02: explicit cast, not a type change here -- WhatsApp's
+      // extra variant lost `access_token` (moved to Vault), so it's no
+      // longer a common property of the OrganizationAddressExtra union.
       const { profile, tokenDead } = await fetchProfile(
         c.igsid,
-        c.orgAddress.extra?.access_token ?? "",
+        (c.orgAddress.extra as InstagramOrganizationAddressExtra | null)
+          ?.access_token ?? "",
       );
       return {
         key:

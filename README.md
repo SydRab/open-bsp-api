@@ -711,11 +711,57 @@ insert into public.organizations_addresses (
       'phone_number',  '<Phone number>',      -- bare E.164 digits, no '+', no spaces
       'verified_name', 'Acme Inc.',           -- Optional: display name shown to recipients
       'business_id',   '<Meta Business Portfolio ID>', -- Optional: Meta Business Portfolio ID (parent of the WABA)
-      'flow_type',     'new_phone_number',    -- 'new_phone_number' | 'existing_phone_number'
-      'access_token',  '<System User Token>'  -- Optional: per-WABA token; if not provided, the system user token is used
+      'flow_type',     'new_phone_number'     -- 'new_phone_number' | 'existing_phone_number'
     )
   );
 ```
+
+> The access token lives in Supabase Vault, not in `extra` (`extra` has no
+> column-level RLS, so a raw token there would be readable by any tenant
+> member with row access). If `META_SYSTEM_USER_ACCESS_TOKEN` already covers
+> this number (true for the test number from Step 5 — it's the same system
+> user token from Step 2), no further action is needed; that's the fallback
+> used when a row has no token of its own. For a number that needs its own
+> token, set it once the row above exists:
+>
+> ```sql
+> select crm.set_whatsapp_access_token(
+>   '<Organization ID>', '<Phone number ID>', '<token>'
+> );
+> ```
+
+</details>
+
+<details>
+<summary>
+Local development before Business Verification clears
+</summary>
+
+Embedded Signup itself doesn't strictly require Business Verification —
+Meta's sandbox accounts and "555" test numbers exist for testing before
+verification — but if you don't have a Meta app configured at all yet, or
+want to exercise the full connect/error/disconnect flow without any live
+Meta dependency, there's a mock path:
+
+1. Set `META_APP_ID=mock` (`META_APP_SECRET` can be anything — it's never
+   checked in mock mode) in the Edge Functions secrets, and
+   `VITE_META_APP_ID=mock` in the UI's `.env`.
+2. The "Connect WhatsApp" button becomes two buttons — "Simulate successful
+   connection" and "Simulate signup error" — that run the real signup
+   function (`performEmbeddedSignup`) end to end against canned Graph API
+   responses instead of `graph.facebook.com`. Rows it creates are flagged
+   `extra.is_mock = true` and show a "test connection" badge in the UI; they
+   never send or receive real messages.
+3. Switching to real credentials later (`META_APP_ID`/`VITE_META_APP_ID` set
+   to your actual Meta app id) is a config change, not a code change — the
+   real path through every one of the 5 Graph API calls is unchanged.
+
+For real inbound/outbound messaging without running Embedded Signup at all
+(e.g. to test P2-01's webhook processing, or templates), use the **test
+number** from Step 5 above instead: register it with the SQL in "For any
+number you add", point `META_SYSTEM_USER_ACCESS_TOKEN` at the test number's
+generated access token, and send it a real message through the Meta API
+Setup page's **Send message** button to activate it for receiving.
 
 </details>
 

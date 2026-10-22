@@ -15,10 +15,9 @@ import { downloadFromStorage } from "../_shared/media.ts";
 import { commitDispatchedMessage } from "../_shared/dispatch.ts";
 import { Json } from "../_shared/db_types.ts";
 import { markdownToWhatsApp } from "../_shared/markdown.ts";
+import { getWhatsAppAccessToken } from "../_shared/whatsapp_credentials.ts";
 
 const API_VERSION = "v24.0";
-const DEFAULT_ACCESS_TOKEN = Deno.env.get("META_SYSTEM_USER_ACCESS_TOKEN") ||
-  "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // A business-scoped user ID (BSUID) is the user's ISO 3166 alpha-2 country code,
@@ -430,15 +429,12 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { data: account } = await client
-    .from("organizations_addresses")
-    .select("extra->>access_token")
-    .eq("organization_id", message.organization_id)
-    .eq("address", message.organization_address)
-    .single()
-    .throwOnError();
-
-  const access_token = account.access_token || DEFAULT_ACCESS_TOKEN;
+  // [crm] P2-02: the token lives in Supabase Vault, not in extra.
+  const access_token = await getWhatsAppAccessToken(
+    client,
+    message.organization_id,
+    message.organization_address,
+  );
 
   let to: string | undefined;
   let recipient: string | undefined;
