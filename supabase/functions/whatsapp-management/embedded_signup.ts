@@ -444,6 +444,10 @@ export async function performEmbeddedSignup(
         callback_url: payload.callback_url || null,
         verify_token: payload.verify_token || null,
         is_mock: app_id === MOCK_APP_ID,
+        // [crm] P2-03: the actually-resolved app id (not payload.application_id,
+        // which may be absent and default to the first pipe-list entry) --
+        // needed later to debug this token with the matching app secret.
+        application_id: app_id,
       },
     })
     .select()

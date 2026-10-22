@@ -24,12 +24,15 @@ import {
   SignupPayload,
   type SignupPopupEvent,
 } from "./embedded_signup.ts";
+import { checkTokenHealth } from "./token_health.ts";
 import {
   type ManagementEnv,
   ownsAddress,
   requireRoles,
   requireScope,
 } from "../_shared/management_auth.ts";
+
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type TemplatePayload = {
   organization_id: string;
@@ -63,10 +66,14 @@ app.onError((err, c) => {
   return c.json({ message: "Internal Server Error" }, 500);
 });
 
-// Validate user or key (skip for public onboard routes)
+// Validate user or key (skip for public onboard routes and the
+// cron-invoked health check, which does its own service-role check below --
+// same pattern as instagram-management's /refresh-tokens)
 app.use("*", async (c, next) => {
   if (
-    c.req.path.endsWith("/onboard") || c.req.path.endsWith("/onboard/events")
+    c.req.path.endsWith("/onboard") ||
+    c.req.path.endsWith("/onboard/events") ||
+    c.req.path.endsWith("/check-token-health")
   ) {
     await next();
     return;
@@ -513,6 +520,23 @@ app.post("/whatsapp-management/onboard/events", async (c) => {
   });
 
   return c.body(null, 204);
+});
+
+// [crm] P2-03: token health check (invoked by the daily cron with the
+// service-role key, same as instagram-management's /refresh-tokens). No
+// refresh endpoint exists for Embedded Signup's tokens, so this flags
+// needs_reauth rather than rotating anything -- see token_health.ts.
+app.post("/whatsapp-management/check-token-health", async (c) => {
+  const token = c.req.header("Authorization")?.replace("Bearer ", "");
+
+  if (token !== SERVICE_ROLE_KEY) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  const client = createUnsecureClient();
+  const summary = await checkTokenHealth(client);
+
+  return c.json(summary);
 });
 
 Deno.serve(app.fetch);

@@ -48,6 +48,19 @@ export type WhatsAppOrganizationAddressExtra = {
   is_mock?: boolean;
   callback_url?: string | null;
   verify_token?: string | null;
+  // [crm] P2-03: which pipe-separated META_APP_ID entry issued this
+  // connection's token -- needed to resolve the matching app secret when
+  // debugging the token later (multi-app deployments only; absent means
+  // the default/first app).
+  application_id?: string;
+  // [crm] P2-03: token health, checked daily against Meta's Debug Token API
+  // (no refresh endpoint exists for Embedded Signup's Business Integration
+  // System User tokens -- an invalid/expiring one is flagged, not
+  // auto-refreshed; recovery is re-running Embedded Signup). Same field
+  // names as Instagram's refresh flow, for UI consistency.
+  token_checked_at?: string; // ISO; last health-check run
+  token_expires_at?: string | null; // ISO; null = never expires
+  needs_reauth?: string | null; // ISO; set when invalid or expiring soon
 };
 
 export type InstagramOrganizationAddressExtra = {
