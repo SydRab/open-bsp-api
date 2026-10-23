@@ -323,3 +323,13 @@ alter table crm.conversation_assignments enable row level security;
 create policy "members can read their orgs conversation assignments"
 on crm.conversation_assignments for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Canned replies (P2-09e) -----------------------------------------------------------
+
+alter table crm.canned_replies enable row level security;
+
+-- Writes go through crm.create_canned_reply & co. (10-29j), gated on
+-- templates.manage; reading is open to any org member, same as tags.
+create policy "members can read their orgs canned replies"
+on crm.canned_replies for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

@@ -312,6 +312,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"canned_replies": {
+                  Row: {
+                    "content": string,"created_at": string,"id": string,"name": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content": string,"created_at"?: string,"id"?: string,"name": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "content"?: string,"created_at"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"contact_addresses": {
                   Row: {
                     "address": string,"contact_id": string,"created_at": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
@@ -976,6 +990,9 @@ isOneToOne: false
 "count_recent_marketing_sends":
 { Args: { "p_conversation_address": string,"p_organization_address": string,"p_organization_id": string,"p_period_days": number }; Returns: number
                            },
+"create_canned_reply":
+{ Args: { "p_content": string,"p_name": string,"p_organization_id": string }; Returns: string
+                           },
 "create_custom_field":
 { Args: { "p_entity": string,"p_key": string,"p_label": Json,"p_options"?: Json,"p_organization_id": string,"p_required"?: boolean,"p_type": string }; Returns: string
                            },
@@ -1007,6 +1024,9 @@ isOneToOne: false
                            },
 "default_role_key":
 { Args: { "p_tier": Database["public"]['Enums']["role"] }; Returns: string
+                           },
+"delete_canned_reply":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "delete_tag":
 { Args: { "p_tag_id": string }; Returns: undefined
@@ -1267,6 +1287,9 @@ isOneToOne: false
                            },
 "unassign_conversation":
 { Args: { "p_conversation_id": string }; Returns: undefined
+                           },
+"update_canned_reply":
+{ Args: { "p_content": string,"p_id": string,"p_name": string }; Returns: undefined
                            },
 "update_custom_field":
 { Args: { "p_field_id": string,"p_label": Json,"p_options": Json,"p_required": boolean }; Returns: undefined

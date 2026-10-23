@@ -82,6 +82,11 @@ grant execute on function crm.set_conversation_tag(uuid, uuid, boolean) to authe
 grant execute on function crm.assign_conversation(uuid, uuid) to authenticated;
 grant execute on function crm.unassign_conversation(uuid) to authenticated;
 
+-- Canned replies (P2-09e).
+grant execute on function crm.create_canned_reply(uuid, text, text) to authenticated;
+grant execute on function crm.update_canned_reply(uuid, text, text) to authenticated;
+grant execute on function crm.delete_canned_reply(uuid) to authenticated;
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
