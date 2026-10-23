@@ -360,6 +360,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"conversation_assignments": {
+                  Row: {
+                    "agent_id": string,"conversation_id": string,"created_at": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id": string,"conversation_id": string,"created_at"?: string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "agent_id"?: string,"conversation_id"?: string,"created_at"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"conversation_tags": {
                   Row: {
                     "conversation_id": string,"created_at": string,"organization_id": string,"tag_id": string
@@ -934,6 +948,9 @@ isOneToOne: false
 "assert_can_read_settings":
 { Args: { "p_organization_id": string }; Returns: string
                            },
+"assign_conversation":
+{ Args: { "p_agent_id": string,"p_conversation_id": string }; Returns: undefined
+                           },
 "caller_agent":
 { Args: { "p_organization_id": string }; Returns: Database["public"]['Tables']["agents"]['Row']
                           SetofOptions: {
@@ -1247,6 +1264,9 @@ isOneToOne: false
                            },
 "try_consume_send_token":
 { Args: { "p_capacity": number,"p_cost"?: number,"p_organization_address": string,"p_organization_id": string,"p_refill_per_second": number,"p_service": Database["public"]['Enums']["service"] }; Returns: boolean
+                           },
+"unassign_conversation":
+{ Args: { "p_conversation_id": string }; Returns: undefined
                            },
 "update_custom_field":
 { Args: { "p_field_id": string,"p_label": Json,"p_options": Json,"p_required": boolean }; Returns: undefined
