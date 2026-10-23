@@ -26,6 +26,7 @@ import {
   type SignupPopupEvent,
 } from "./embedded_signup.ts";
 import { checkTokenHealth } from "./token_health.ts";
+import { checkNumberQuality } from "./number_health.ts";
 import {
   type ManagementEnv,
   ownsAddress,
@@ -601,6 +602,22 @@ app.post("/whatsapp-management/check-token-health", async (c) => {
 
   const client = createUnsecureClient();
   const summary = await checkTokenHealth(client);
+
+  return c.json(summary);
+});
+
+// [crm] P2-10: quality-rating check (invoked by the daily cron, same
+// pattern as check-token-health). No webhook exists for quality_rating --
+// see number_health.ts.
+app.post("/whatsapp-management/check-number-quality", async (c) => {
+  const token = c.req.header("Authorization")?.replace("Bearer ", "");
+
+  if (token !== SERVICE_ROLE_KEY) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  const client = createUnsecureClient();
+  const summary = await checkNumberQuality(client);
 
   return c.json(summary);
 });

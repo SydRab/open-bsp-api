@@ -61,6 +61,16 @@ export type WhatsAppOrganizationAddressExtra = {
   token_checked_at?: string; // ISO; last health-check run
   token_expires_at?: string | null; // ISO; null = never expires
   needs_reauth?: string | null; // ISO; set when invalid or expiring soon
+  // [crm] P2-10: quality rating, polled daily against Meta's phone number
+  // GET endpoint (no webhook exists for this, unlike the messaging limit
+  // below) -- see whatsapp-management/number_health.ts.
+  quality_rating?: string | null; // "GREEN" | "YELLOW" | "RED" | "UNKNOWN" (not a closed set -- Meta's)
+  quality_checked_at?: string | null; // ISO; last quality-check run
+  // [crm] P2-10: messaging limit tier, the opposite shape -- no polling GET
+  // field for it, only ever updated from the phone_number_quality_update
+  // webhook (whatsapp_webhook_processing.ts).
+  messaging_limit_tier?: string | null; // "TIER_50".."TIER_UNLIMITED"/"TIER_NOT_SET"
+  messaging_limit_checked_at?: string | null; // ISO; last webhook-driven update
 };
 
 export type InstagramOrganizationAddressExtra = {

@@ -22,14 +22,21 @@
 //               hours (worst case ~12h) and pacing (sub-minute) both fit
 //               inside that sweep's 12h/29-attempt cap.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ConversationRow, Database, OutgoingMessage } from "./supabase.ts";
+import type {
+  ConversationRow,
+  Database,
+  OutgoingMessage,
+  WhatsAppOrganizationAddressExtra,
+} from "./supabase.ts";
+import { effectivePacing } from "./number_health.ts";
 
-// Conservative, self-imposed defaults -- NOT a documented Meta tier limit
-// (those vary per number and quality rating, and aren't reliably knowable
-// from here). The point is to smooth OUR OWN bursts (e.g. a future broadcast
-// feature firing many sends at once) before they trip Meta's own throughput
-// limit (code 130429) or per-recipient limit (131056), not to approximate
-// Meta's limit exactly.
+// Conservative, self-imposed defaults -- NOT a documented Meta tier limit.
+// The point is to smooth OUR OWN bursts (e.g. a future broadcast feature
+// firing many sends at once) before they trip Meta's own throughput limit
+// (code 130429) or per-recipient limit (131056), not to approximate Meta's
+// limit exactly. [crm] P2-10: these are only the DEFAULTS now -- a WhatsApp
+// number with a tracked quality/limit problem gets a reduced pacing
+// instead, via effectivePacing (_shared/number_health.ts).
 export const SEND_PACING_CAPACITY = 5;
 export const SEND_PACING_REFILL_PER_SECOND = 1;
 
@@ -307,14 +314,41 @@ export async function checkSendPolicy(
     }
   }
 
+  // [crm] P2-10: auto-throttle. quality_rating/messaging_limit_tier are
+  // WhatsApp-only Meta concepts (see _shared/number_health.ts) -- every
+  // other service keeps the plain defaults.
+  let capacity: number = SEND_PACING_CAPACITY;
+  let refillPerSecond: number = SEND_PACING_REFILL_PER_SECOND;
+
+  if (message.service === "whatsapp") {
+    const { data: addressRow } = await client
+      .from("organizations_addresses")
+      .select("extra")
+      .eq("organization_id", message.organization_id)
+      .eq("service", "whatsapp")
+      .eq("address", message.organization_address)
+      .maybeSingle();
+
+    const extra = (addressRow?.extra ?? {}) as WhatsAppOrganizationAddressExtra;
+
+    ({ capacity, refillPerSecond } = effectivePacing(
+      extra.quality_rating,
+      extra.messaging_limit_tier,
+      {
+        capacity: SEND_PACING_CAPACITY,
+        refillPerSecond: SEND_PACING_REFILL_PER_SECOND,
+      },
+    ));
+  }
+
   const { data: tokenAvailable, error: pacingError } = await client
     .schema("crm")
     .rpc("try_consume_send_token", {
       p_organization_id: message.organization_id,
       p_service: message.service,
       p_organization_address: message.organization_address,
-      p_capacity: SEND_PACING_CAPACITY,
-      p_refill_per_second: SEND_PACING_REFILL_PER_SECOND,
+      p_capacity: capacity,
+      p_refill_per_second: refillPerSecond,
     });
 
   if (pacingError) throw pacingError;

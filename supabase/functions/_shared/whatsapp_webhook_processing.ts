@@ -35,6 +35,7 @@ import {
   updateTemplateStatus,
 } from "./whatsapp_templates.ts";
 import { getSetting, matchesOptOutKeyword } from "./send_policy.ts";
+import { isLimitDowngraded } from "./number_health.ts";
 
 const API_VERSION = "v24.0";
 
@@ -570,9 +571,11 @@ export async function processWhatsAppWebhookPayload(
 
       // [crm] P2-01: template and phone-number events are WABA-level, not
       // tied to one phone_number_id, so they resolve the organization the
-      // same way account_update does — by waba_id. Alerting owners /
-      // auto-throttling on quality or limit changes is P2-10 (Number
-      // health); this phase only gets the events onto the record.
+      // same way account_update does — by waba_id. (P2-10 adds the
+      // phone_number_quality_update branch below, which re-resolves the
+      // SPECIFIC number this event is about -- a WABA can have more than
+      // one connected number, and "most recent row for this waba" below is
+      // only ever right for that branch by coincidence.)
       if (
         field === "message_template_status_update" ||
         field === "message_template_quality_update" ||
@@ -649,6 +652,69 @@ export async function processWhatsAppWebhookPayload(
               "message_template_quality_update named a template crm.templates doesn't have yet",
               { organization_id: address.organization_id, value },
             );
+          }
+        } else if (field === "phone_number_quality_update") {
+          // [crm] P2-10: re-resolve the SPECIFIC row this event is about --
+          // `address` above is just whichever row for this waba_id was
+          // connected most recently, which is only right by coincidence
+          // once a WABA has more than one connected number. Matched by
+          // digits only: Meta's webhook display_phone_number and the GET
+          // endpoint's extra.phone_number (stored at connect time) aren't
+          // guaranteed to use the same formatting.
+          const digitsOnly = (s: string) => s.replace(/\D/g, "");
+          const target = digitsOnly(value.display_phone_number);
+
+          const { data: candidates } = await client
+            .from("organizations_addresses")
+            .select()
+            .eq("extra->>waba_id", waba_id)
+            .throwOnError();
+
+          const specific = candidates?.find((row) => {
+            const rowExtra = row.extra as
+              | WhatsAppOrganizationAddressExtra
+              | null;
+            return rowExtra?.phone_number &&
+              digitsOnly(rowExtra.phone_number) === target;
+          }) ?? address;
+
+          const specificExtra =
+            (specific.extra ?? {}) as WhatsAppOrganizationAddressExtra;
+          const newTier = value.max_daily_conversations_per_business ??
+            value.current_limit;
+
+          if (newTier) {
+            const downgraded = isLimitDowngraded(
+              specificExtra.messaging_limit_tier,
+              newTier,
+            );
+
+            await client
+              .from("organizations_addresses")
+              .update({
+                extra: {
+                  messaging_limit_tier: newTier,
+                  messaging_limit_checked_at: new Date().toISOString(),
+                },
+              })
+              .eq("organization_id", specific.organization_id)
+              .eq("address", specific.address)
+              .throwOnError();
+
+            if (downgraded) {
+              await client
+                .from("logs")
+                .insert({
+                  organization_id: specific.organization_id,
+                  organization_address: specific.address,
+                  category: "whatsapp_number_quality",
+                  service: "whatsapp",
+                  level: "warning",
+                  message:
+                    `WhatsApp messaging limit downgraded from ${specificExtra.messaging_limit_tier} to ${newTier}`,
+                })
+                .throwOnError();
+            }
           }
         }
 
