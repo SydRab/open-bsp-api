@@ -72,6 +72,17 @@ create table public.conversations (
   -- public.update_conversation_last_inbound_at (03-05). Null means no
   -- inbound message yet -- the window is closed.
   last_inbound_at timestamp with time zone,
+  -- [crm] P3-01: the latest Click-to-WhatsApp referral seen on this
+  -- conversation (Meta's own object: source_url/source_type/source_id/
+  -- headline/body/ctwa_clid/media). Denormalized off the inbound message
+  -- that carried it, same mechanism as last_inbound_at above, but
+  -- deliberately simpler: this is a "what ad is this conversation about
+  -- right now" convenience cache, always the most recently PROCESSED
+  -- referral with no out-of-order guard -- the rigorous, out-of-order-safe
+  -- first-touch/last-touch attribution that actually matters for
+  -- reporting lives on crm.contacts (10-29k_referral.sql) instead.
+  -- Maintained by public.update_conversation_referral (02-03).
+  referral jsonb,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

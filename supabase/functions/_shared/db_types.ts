@@ -348,14 +348,14 @@ isOneToOne: false
                   ]
                 },"contacts": {
                   Row: {
-                    "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"id": string,"locale": string | null,"organization_id": string,"updated_at": string
+                    "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"first_touch_at": string | null,"first_touch_referral": Json | null,"id": string,"last_touch_at": string | null,"last_touch_referral": Json | null,"locale": string | null,"organization_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"id"?: string,"locale"?: string | null,"organization_id": string,"updated_at"?: string
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"id"?: string,"locale"?: string | null,"organization_id"?: string,"updated_at"?: string
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1048,7 +1048,11 @@ isOneToOne: false
               "created_at": string,
 "custom_fields": NonNullable<Json>,
 "display_name": string | null,
+"first_touch_at": string | null,
+"first_touch_referral": Json | null,
 "id": string,
+"last_touch_at": string | null,
+"last_touch_referral": Json | null,
 "locale": string | null,
 "organization_id": string,
 "updated_at": string
@@ -1383,14 +1387,14 @@ isOneToOne: false
                   ]
                 },"conversations": {
                   Row: {
-                    "address": string,"created_at": string,"extra": Json | null,"id": string,"last_inbound_at": string | null,"name": string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type": string | null,"updated_at": string
+                    "address": string,"created_at": string,"extra": Json | null,"id": string,"last_inbound_at": string | null,"name": string | null,"organization_address": string,"organization_id": string,"referral": Json | null,"service": Database["public"]['Enums']["service"],"type": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address": string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
+                    "address": string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address": string,"organization_id": string,"referral"?: Json | null,"service": Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address"?: string,"organization_id"?: string,"service"?: Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
+                    "address"?: string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address"?: string,"organization_id"?: string,"referral"?: Json | null,"service"?: Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {

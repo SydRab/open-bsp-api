@@ -229,6 +229,15 @@ for each row
 when (new.sender_address is not null)
 execute function public.update_conversation_last_inbound_at();
 
+-- [crm] P3-01: only a genuinely referral-carrying inbound message arms
+-- this -- most never do.
+create trigger update_conversation_referral
+after insert
+on public.messages
+for each row
+when (new.sender_address is not null and new.content->'referral' is not null)
+execute function public.update_conversation_referral();
+
 -- Addressing is set (and validated against the conversation) at insert and
 -- frozen here; updates only fill sender_address once and merge content/status.
 create trigger preserve_addressing

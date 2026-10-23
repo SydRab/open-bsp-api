@@ -82,6 +82,25 @@ begin
 end;
 $$;
 
+-- [crm] P3-01: denormalizes conversations.referral off the inbound message
+-- that carried a Click-to-WhatsApp referral object (03-05 arms this only
+-- when the message actually has one). Deliberately no out-of-order guard,
+-- unlike last_inbound_at above -- see the column's own comment in
+-- 03-03_conversations.sql for why that's an acceptable simplification here.
+create function public.update_conversation_referral() returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $$
+begin
+  update public.conversations
+  set referral = new.content->'referral'
+  where id = new.conversation_id;
+
+  return new;
+end;
+$$;
+
 -- A deletion the deleted can undo is not a deletion. `members can update
 -- themselves` is keyed on user_id = auth.uid() alone, so a removed member
 -- reaches their own row and could otherwise clear deleted_at and restore every

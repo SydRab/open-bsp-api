@@ -21,6 +21,15 @@ create table crm.contacts (
   -- organization's.
   locale text,
   custom_fields jsonb default '{}'::jsonb not null,
+  -- [crm] P3-01: Click-to-WhatsApp attribution, out-of-order-safe (see
+  -- crm.touch_contact_referral, 10-29k_referral.sql) -- first_touch is the
+  -- earliest referral ever seen for this person, last_touch the most
+  -- recent, regardless of the order webhooks actually arrive in. Null
+  -- until their first referral-carrying message.
+  first_touch_referral jsonb,
+  first_touch_at timestamp with time zone,
+  last_touch_referral jsonb,
+  last_touch_at timestamp with time zone,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );
