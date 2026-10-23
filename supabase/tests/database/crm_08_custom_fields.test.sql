@@ -232,7 +232,10 @@ select tests.as_user('owner@test.local');
 select crm.set_member_address_access(:'rep', 'whatsapp', '1001', true);
 
 select tests.as_user('rep@test.local');
-select results_eq(
+-- set_eq, not results_eq: the query has no ORDER BY (nor should it need one
+-- for a visibility check), so the two rows can come back in either physical
+-- order -- set_eq compares membership, not position, and so doesn't flake.
+select set_eq(
   format($$ select id from crm.contacts where organization_id = %L $$, :'org'),
   format($$ values (%L::uuid), ((select contact_id from crm.contact_addresses where address = '919800000003' and organization_id = %L)) $$, :'asha', :'org'),
   'a number-scoped member sees only people who wrote to their numbers'
