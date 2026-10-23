@@ -360,6 +360,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"conversation_tags": {
+                  Row: {
+                    "conversation_id": string,"created_at": string,"organization_id": string,"tag_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "conversation_id": string,"created_at"?: string,"organization_id": string,"tag_id": string
+                  }
+                  Update: {
+                    "conversation_id"?: string,"created_at"?: string,"organization_id"?: string,"tag_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "conversation_tags_tag_fkey"
+      columns: ["organization_id","tag_id"]
+isOneToOne: false
+      referencedRelation: "tags"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"disclaimer_versions": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": string,"kind": string,"locale": string,"organization_id": string,"text": string,"version": number
@@ -746,6 +766,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"tags": {
+                  Row: {
+                    "color": string,"created_at": string,"id": string,"name": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "color"?: string,"created_at"?: string,"id"?: string,"name": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "color"?: string,"created_at"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"team_members": {
                   Row: {
                     "agent_id": string,"created_at": string,"organization_id": string,"team_id": string
@@ -931,6 +965,9 @@ isOneToOne: false
 "create_preset_roles":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"create_tag":
+{ Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
 "create_team":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
@@ -953,6 +990,9 @@ isOneToOne: false
                            },
 "default_role_key":
 { Args: { "p_tier": Database["public"]['Enums']["role"] }; Returns: string
+                           },
+"delete_tag":
+{ Args: { "p_tag_id": string }; Returns: undefined
                            },
 "delete_team":
 { Args: { "p_team_id": string }; Returns: undefined
@@ -1099,6 +1139,9 @@ isOneToOne: false
 "record_consent_event":
 { Args: { "p_address": string,"p_keyword_matched"?: string,"p_note"?: string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source": string,"p_status": string }; Returns: undefined
                            },
+"rename_tag":
+{ Args: { "p_name": string,"p_tag_id": string }; Returns: undefined
+                           },
 "rename_team":
 { Args: { "p_name": string,"p_team_id": string }; Returns: undefined
                            },
@@ -1148,6 +1191,9 @@ isOneToOne: false
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
                            },
+"set_conversation_tag":
+{ Args: { "p_conversation_id": string,"p_tag_id": string,"p_tagged": boolean }; Returns: undefined
+                           },
 "set_disclaimer":
 { Args: { "p_kind": string,"p_locale": string,"p_organization_id": string,"p_text": string }; Returns: number
                            },
@@ -1180,6 +1226,9 @@ isOneToOne: false
                            },
 "set_setting":
 { Args: { "p_key": string,"p_organization_id": string,"p_scope"?: string,"p_target"?: string,"p_value": Json }; Returns: undefined
+                           },
+"set_tag_color":
+{ Args: { "p_color": string,"p_tag_id": string }; Returns: undefined
                            },
 "set_team_member":
 { Args: { "p_agent_id": string,"p_member": boolean,"p_team_id": string }; Returns: undefined

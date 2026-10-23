@@ -299,3 +299,17 @@ alter table crm.send_rate_buckets enable row level security;
 create policy "members can read their orgs send rate buckets"
 on crm.send_rate_buckets for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Tags (P2-09b) -----------------------------------------------------------------
+
+alter table crm.tags enable row level security;
+alter table crm.conversation_tags enable row level security;
+
+-- Writes go through crm.create_tag & co. (10-29f) -- same split as teams.
+create policy "members can read their orgs tags"
+on crm.tags for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "members can read their orgs conversation tags"
+on crm.conversation_tags for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
