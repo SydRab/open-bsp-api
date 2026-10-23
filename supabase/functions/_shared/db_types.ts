@@ -752,6 +752,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"templates": {
+                  Row: {
+                    "category": string,"components": NonNullable<Json>,"created_at": string,"id": string,"language": string,"meta_id": string | null,"name": string,"organization_address": string,"organization_id": string,"pack_item_key": string | null,"quality_score": string | null,"rejection_reason": string | null,"status": string,"synced_at": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"components": NonNullable<Json>,"created_at"?: string,"id"?: string,"language": string,"meta_id"?: string | null,"name": string,"organization_address": string,"organization_id": string,"pack_item_key"?: string | null,"quality_score"?: string | null,"rejection_reason"?: string | null,"status"?: string,"synced_at"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "category"?: string,"components"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"language"?: string,"meta_id"?: string | null,"name"?: string,"organization_address"?: string,"organization_id"?: string,"pack_item_key"?: string | null,"quality_score"?: string | null,"rejection_reason"?: string | null,"status"?: string,"synced_at"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"tier_features": {
                   Row: {
                     "created_at": string,"feature_key": string,"tier_id": string

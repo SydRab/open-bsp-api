@@ -270,3 +270,13 @@ alter table crm.webhook_events enable row level security;
 -- can span several tenants at once and are platform infrastructure, not
 -- tenant-readable data. Only service_role (the webhook handler and
 -- whatsapp-webhook-processor) reads or writes them.
+
+-- Templates (P2-04) -----------------------------------------------------------------
+
+alter table crm.templates enable row level security;
+
+-- Writes are service-role only (list/create sync, the status/quality
+-- webhooks, pack-template submission) -- no policy allows a member write.
+create policy "members can read their orgs templates"
+on crm.templates for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

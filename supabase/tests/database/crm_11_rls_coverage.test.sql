@@ -145,7 +145,7 @@ select results_eq(
     ('crm.organization_pack_items'), ('crm.organization_packs'),
     ('crm.organization_profiles'), ('crm.role_permissions'), ('crm.roles'),
     ('crm.setting_values'), ('crm.support_access_grants'),
-    ('crm.team_members'), ('crm.teams'), ('public.agents'),
+    ('crm.team_members'), ('crm.teams'), ('crm.templates'), ('public.agents'),
     ('public.api_keys'), ('public.contacts_addresses'),
     ('public.conversations'), ('public.conversations_agents'),
     ('public.invitations'), ('public.logs'), ('public.messages'),

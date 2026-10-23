@@ -4,6 +4,7 @@ import * as log from "../_shared/logger.ts";
 import { HTTPException } from "jsr:@hono/hono/http-exception";
 import { ContentfulStatusCode } from "jsr:@hono/hono/utils/http-status";
 import { getWhatsAppAccessToken } from "../_shared/whatsapp_credentials.ts";
+import { upsertTemplateFromMeta } from "../_shared/whatsapp_templates.ts";
 
 const API_VERSION = "v24.0";
 
@@ -37,11 +38,16 @@ async function getBusinessCredentials(
   return { waba_id: data.waba_id, access_token };
 }
 
-export async function listTemplates(
+/** [crm] P2-04: fetches every template from Meta and upserts each into
+ * crm.templates -- the UI reads the list from there now (fast, reflects
+ * webhook-driven status/quality updates immediately), not from this call
+ * directly. This is the manual "Sync" action; list/create/edit/delete all
+ * keep the cache current on their own too. */
+export async function syncTemplates(
   client: SupabaseClient<Database>,
   organization_id: string,
   organization_address: string,
-): Promise<TemplateData[]> {
+): Promise<{ synced: number }> {
   const { waba_id, access_token } = await getBusinessCredentials(
     client,
     organization_id,
@@ -63,7 +69,21 @@ export async function listTemplates(
     });
   }
 
-  return await response.json();
+  // Meta wraps the list in `{ data: [...] }`.
+  const { data: templates } = (await response.json()) as {
+    data: TemplateData[];
+  };
+
+  for (const template of templates) {
+    await upsertTemplateFromMeta(
+      client,
+      organization_id,
+      organization_address,
+      template,
+    );
+  }
+
+  return { synced: templates.length };
 }
 
 export async function fetchTemplate(
@@ -101,6 +121,7 @@ export async function createTemplate(
   organization_id: string,
   organization_address: string,
   template: TemplateData,
+  pack_item_key?: string,
 ): Promise<{
   id: string;
   status: string;
@@ -141,7 +162,27 @@ export async function createTemplate(
     });
   }
 
-  return await response.json();
+  const created = await response.json() as {
+    id: string;
+    status: string;
+    category: string;
+  };
+
+  // The create response doesn't echo the full object back -- build one from
+  // what was submitted plus what Meta assigned (id, status).
+  await upsertTemplateFromMeta(
+    client,
+    organization_id,
+    organization_address,
+    {
+      ...template,
+      id: created.id,
+      status: created.status as TemplateData["status"],
+    },
+    pack_item_key,
+  );
+
+  return created;
 }
 
 export async function editTemplate(
@@ -180,7 +221,20 @@ export async function editTemplate(
     });
   }
 
-  return await response.json();
+  const result = await response.json() as { success: boolean };
+
+  // Editing triggers a new Meta review -- the template goes back to PENDING
+  // until re-approved (the edit response itself is only {success}, with no
+  // status of its own; the status/quality webhooks correct this once Meta
+  // actually re-reviews it).
+  await upsertTemplateFromMeta(
+    client,
+    organization_id,
+    organization_address,
+    { ...template, status: "PENDING" },
+  );
+
+  return result;
 }
 
 export async function deleteTemplate(
@@ -213,6 +267,17 @@ export async function deleteTemplate(
       cause: await response.json().catch(() => ({})),
     });
   }
+
+  // Deleting by name removes every language variant on Meta's side (the
+  // call above carries no language) -- match that here.
+  await client
+    .schema("crm")
+    .from("templates")
+    .delete()
+    .eq("organization_id", organization_id)
+    .eq("organization_address", organization_address)
+    .eq("name", template.name)
+    .throwOnError();
 
   return await response.json();
 }

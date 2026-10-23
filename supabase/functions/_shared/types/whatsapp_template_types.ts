@@ -21,7 +21,9 @@ export type TemplateData = {
     | "DISABLED"
     | "PAUSED"
     | "LIMIT_EXCEEDED";
-  category: "MARKETING"; // TODO: service and auth categories - cabra 2024/09/12
+  // [crm] P2-04: widened from the upstream "MARKETING"-only literal -- the
+  // editor already sends UTILITY too, this type just didn't say so.
+  category: "MARKETING" | "UTILITY";
   language: string;
   components: (
     | BodyComponent

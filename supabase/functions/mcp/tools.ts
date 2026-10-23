@@ -9,10 +9,7 @@ import type {
   TemplateData,
 } from "../_shared/supabase.ts";
 import dayjs from "dayjs";
-import {
-  fetchTemplate as fetchTemplateMethod,
-  listTemplates as listTemplatesMethod,
-} from "../whatsapp-management/templates.ts";
+import { fetchTemplate as fetchTemplateMethod } from "../whatsapp-management/templates.ts";
 
 // Helper: Normalize phone number to digits only
 function normalizePhone(phone: string): string {
@@ -544,15 +541,22 @@ export async function listTemplates(params: ListTemplatesParams) {
     allowedAccounts,
   });
 
-  const templates = await listTemplatesMethod(
-    params.supabase,
-    params.orgId,
-    account.address,
-  );
+  // [crm] P2-04: reads the local cache (crm.templates), not a live Meta
+  // call -- kept current by list/create/edit/delete syncs and the
+  // status/quality webhooks. Use the "Sync templates" UI action first if
+  // this looks stale.
+  const { data: templates, error } = await params.supabase
+    .schema("crm")
+    .from("templates")
+    .select("meta_id, name, status, category, language")
+    .eq("organization_id", params.orgId)
+    .eq("organization_address", account.address);
+
+  if (error) throw error;
 
   return {
-    templates: templates.map((t: TemplateData) => ({
-      id: t.id,
+    templates: (templates ?? []).map((t) => ({
+      id: t.meta_id,
       name: t.name,
       status: t.status,
       category: t.category,

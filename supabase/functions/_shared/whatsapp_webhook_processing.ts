@@ -28,6 +28,10 @@ import {
 } from "./media.ts";
 import { whatsappToMarkdown } from "./markdown.ts";
 import { getWhatsAppAccessToken } from "./whatsapp_credentials.ts";
+import {
+  updateTemplateQuality,
+  updateTemplateStatus,
+} from "./whatsapp_templates.ts";
 
 const API_VERSION = "v24.0";
 
@@ -534,10 +538,9 @@ export async function processWhatsAppWebhookPayload(
 
       // [crm] P2-01: template and phone-number events are WABA-level, not
       // tied to one phone_number_id, so they resolve the organization the
-      // same way account_update does — by waba_id — and just log for
-      // visibility. Alerting owners / auto-throttling on quality or limit
-      // changes is P2-10 (Number health); this phase only gets the events
-      // onto the record.
+      // same way account_update does — by waba_id. Alerting owners /
+      // auto-throttling on quality or limit changes is P2-10 (Number
+      // health); this phase only gets the events onto the record.
       if (
         field === "message_template_status_update" ||
         field === "message_template_quality_update" ||
@@ -581,6 +584,41 @@ export async function processWhatsAppWebhookPayload(
             metadata: { waba_id, value },
           })
           .throwOnError();
+
+        // [crm] P2-04: beyond the log line above, these two also update
+        // crm.templates -- the local cache the UI/MCP read instead of
+        // live-fetching Meta on every view. A miss (no cached row yet) is
+        // not an error: the next list sync creates the row properly.
+        if (field === "message_template_status_update") {
+          const updated = await updateTemplateStatus(
+            client,
+            address.organization_id,
+            value.message_template_id.toString(),
+            value.event,
+            value.reason === "NONE" ? null : value.reason,
+          );
+
+          if (!updated) {
+            log.info(
+              "message_template_status_update named a template crm.templates doesn't have yet",
+              { organization_id: address.organization_id, value },
+            );
+          }
+        } else if (field === "message_template_quality_update") {
+          const updated = await updateTemplateQuality(
+            client,
+            address.organization_id,
+            value.message_template_id.toString(),
+            value.new_quality_score,
+          );
+
+          if (!updated) {
+            log.info(
+              "message_template_quality_update named a template crm.templates doesn't have yet",
+              { organization_id: address.organization_id, value },
+            );
+          }
+        }
 
         continue;
       }

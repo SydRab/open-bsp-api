@@ -15,8 +15,9 @@ import {
   deleteTemplate,
   editTemplate,
   fetchTemplate,
-  listTemplates,
+  syncTemplates,
 } from "./templates.ts";
+import { submitPackTemplates } from "./pack_templates.ts";
 import {
   deleteSignup,
   performEmbeddedSignup,
@@ -146,7 +147,10 @@ app.put(
     const { organization_id, organization_address, template } = await c.req
       .json<TemplatePayload>();
 
-    const client = c.get("supabase");
+    // Once the user has been authorized, use the unsecure client: syncing
+    // writes crm.templates, which (like organizations_addresses) members
+    // may read but not write directly.
+    const client = createUnsecureClient();
 
     // fetch
     if (template) {
@@ -160,14 +164,73 @@ app.put(
       return c.json(templateDetails);
     }
 
-    // list
-    const templates = await listTemplates(
+    // sync (list from Meta, upsert into crm.templates)
+    const summary = await syncTemplates(
       client,
       organization_id,
       organization_address,
     );
 
-    return c.json(templates);
+    return c.json(summary);
+  },
+);
+
+// [crm] P2-04: submits every not-yet-submitted message_template pack item
+// (organization_pack_items, kind = 'message_template') to Meta, one per
+// language, filling the footer with the org's current short disclaimer when
+// the pack item says attach_disclaimer.
+//
+// A pack can carry several templates in several languages each -- that's
+// several sequential Meta API calls in one invocation, which a live run
+// showed can exceed a single request's CPU/wall-clock budget. Ack now, work
+// after the response, same pattern (and the same local-tooling fallback)
+// as slack-webhook/index.ts. The UI doesn't get a submitted/failed count
+// back; it finds out by reloading the templates list (crm.templates), which
+// each createTemplate call keeps current as it completes.
+app.post(
+  "/whatsapp-management/templates/submit-pack",
+  requireRoles(["admin", "owner"]),
+  async (c) => {
+    const { organization_id, organization_address } = await c.req.json<{
+      organization_id: string;
+      organization_address: string;
+    }>();
+
+    // Writes crm.templates and (on failure) public.logs -- both service-role
+    // only, same reasoning as the sync route above.
+    const client = createUnsecureClient();
+
+    const work = submitPackTemplates(
+      client,
+      organization_id,
+      organization_address,
+    )
+      .then((summary) => {
+        log.info("Pack template submission finished", {
+          organization_id,
+          organization_address,
+          ...summary,
+        });
+      })
+      .catch((error) => {
+        log.error("Pack template submission failed", {
+          organization_id,
+          organization_address,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+
+    const runtime = globalThis as unknown as {
+      EdgeRuntime?: { waitUntil(p: Promise<unknown>): void };
+    };
+
+    if (runtime.EdgeRuntime?.waitUntil) {
+      runtime.EdgeRuntime.waitUntil(work);
+    } else {
+      await work;
+    }
+
+    return c.json({ status: "queued" });
   },
 );
 
@@ -178,7 +241,8 @@ app.post(
     const { organization_id, organization_address, template } = await c.req
       .json<TemplatePayload>();
 
-    const client = c.get("supabase");
+    // Writes crm.templates on success -- service-role only.
+    const client = createUnsecureClient();
 
     const response = await createTemplate(
       client,
@@ -198,7 +262,8 @@ app.patch(
     const { organization_id, organization_address, template } = await c.req
       .json<TemplatePayload>();
 
-    const client = c.get("supabase");
+    // Writes crm.templates on success -- service-role only.
+    const client = createUnsecureClient();
 
     const response = await editTemplate(
       client,
@@ -218,7 +283,8 @@ app.delete(
     const { organization_id, organization_address, template } = await c.req
       .json<TemplatePayload>();
 
-    const client = c.get("supabase");
+    // Deletes the crm.templates row(s) on success -- service-role only.
+    const client = createUnsecureClient();
 
     const response = await deleteTemplate(
       client,
