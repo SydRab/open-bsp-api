@@ -16,6 +16,10 @@ import { commitDispatchedMessage } from "../_shared/dispatch.ts";
 import { Json } from "../_shared/db_types.ts";
 import { markdownToWhatsApp } from "../_shared/markdown.ts";
 import { getWhatsAppAccessToken } from "../_shared/whatsapp_credentials.ts";
+import {
+  categorizeMetaErrorCode,
+  checkSendPolicy,
+} from "../_shared/send_policy.ts";
 
 const API_VERSION = "v24.0";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -463,6 +467,49 @@ Deno.serve(async (req) => {
   // is a send; a contact's row only ever comes here for read receipts and
   // typing indicators.
   if (message.sender_address === null) {
+    // [crm] P2-05: the single outbound compliance gate (window, opt-in,
+    // quiet hours, marketing cap, pacing) -- see _shared/send_policy.ts.
+    // Runs before any Meta call, including media upload.
+    const decision = await checkSendPolicy(client, message);
+
+    if (decision.outcome === "blocked") {
+      log.warn("Dispatch blocked by send policy", {
+        message_id: message.id,
+        category: decision.category,
+      });
+
+      await client
+        .from("messages")
+        .update({
+          status: {
+            pending: null,
+            failed: new Date().toISOString(),
+            errors: [
+              { category: decision.category, message: decision.message },
+            ],
+          },
+        })
+        .eq("id", message.id)
+        .throwOnError();
+
+      return new Response();
+    }
+
+    if (decision.outcome === "held") {
+      log.info("Dispatch held by send policy", {
+        message_id: message.id,
+        key: decision.key,
+      });
+
+      await client
+        .from("messages")
+        .update({ status: { [decision.key]: new Date().toISOString() } })
+        .eq("id", message.id)
+        .throwOnError();
+
+      return new Response();
+    }
+
     try {
       const patchedMessage = await uploadMediaItem({
         message,
@@ -532,6 +579,29 @@ Deno.serve(async (req) => {
         error: errorMessage,
       });
 
+      // [crm] P2-05: code 131050 is Meta's OWN opt-out signal ("this
+      // recipient has chosen to stop receiving marketing messages") -- the
+      // contact opted out through Meta directly (e.g. "Stop promotions" in
+      // the WhatsApp app), not through our STOP-keyword handler. Sync it
+      // locally so crm.get_consent_status (and therefore our own gate)
+      // reflects it too, instead of re-discovering the same rejection from
+      // Meta on every future marketing send to this contact.
+      if (metaCode === 131050 && message.conversation_address) {
+        await client.schema("crm").rpc("record_consent_event", {
+          p_organization_id: message.organization_id,
+          p_organization_address: message.organization_address,
+          p_service: "whatsapp",
+          p_address: message.conversation_address,
+          p_status: "opted_out",
+          p_source: "api",
+          p_note: "Synced from Meta error 131050",
+        }).throwOnError();
+      }
+
+      const category = metaCode != null
+        ? categorizeMetaErrorCode(metaCode)
+        : undefined;
+
       await client
         .from("messages")
         .update({
@@ -540,7 +610,11 @@ Deno.serve(async (req) => {
             // commitDispatchedMessage retracts on success.
             pending: null,
             failed: new Date().toISOString(),
-            errors: [errorDetail],
+            errors: [
+              category && isWhatsAppError
+                ? { ...errorDetail as Record<string, unknown>, category }
+                : errorDetail,
+            ],
           },
         })
         .eq("id", message.id)

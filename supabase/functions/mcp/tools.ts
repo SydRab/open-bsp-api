@@ -10,6 +10,7 @@ import type {
 } from "../_shared/supabase.ts";
 import dayjs from "dayjs";
 import { fetchTemplate as fetchTemplateMethod } from "../whatsapp-management/templates.ts";
+import { isWindowOpen } from "../_shared/send_policy.ts";
 
 // Helper: Normalize phone number to digits only
 function normalizePhone(phone: string): string {
@@ -469,30 +470,25 @@ export async function sendMessage(params: SendMessageParams) {
     allowedAccounts,
   });
 
-  // Check service window if type is text
+  // Check service window if type is text. Same rule, same source of truth
+  // (conversations.last_inbound_at) as whatsapp-dispatcher's pre-send gate
+  // (_shared/send_policy.ts) -- this is a fast pre-check for a clear error
+  // back to the calling agent, not a separate enforcement path: the gate
+  // still runs again at actual dispatch time, since the window can close in
+  // the gap between this check and the message being sent.
   if (params.content.kind !== "template") {
-    const { data: lastMsg } = await params.supabase
-      .from("messages")
-      .select("timestamp")
+    const { data: conversation } = await params.supabase
+      .from("conversations")
+      .select("last_inbound_at")
       .eq("organization_id", params.orgId)
       .eq("organization_address", account.address)
-      .eq("conversation_address", contactPhone)
-      .not("sender_address", "is", null)
-      .order("timestamp", { ascending: false })
-      .limit(1)
+      .eq("service", "whatsapp")
+      .eq("address", contactPhone)
       .maybeSingle();
 
-    if (!lastMsg) {
+    if (!isWindowOpen(conversation?.last_inbound_at ?? null)) {
       throw new Error(
-        "Service window is closed (no prior incoming message). You must send a template content to open the service window.",
-      );
-    }
-
-    const diff = dayjs().diff(dayjs(lastMsg.timestamp), "hour");
-
-    if (diff >= 24) {
-      throw new Error(
-        "Service window is closed (24h+ since last user message). You must send a template content to re-open it.",
+        "Service window is closed (no contact reply in the last 24h, or none yet). You must send a template content to open the service window.",
       );
     }
   }
@@ -507,6 +503,28 @@ export async function sendMessage(params: SendMessageParams) {
     );
   }
 
+  let content = params.content;
+
+  // [crm] P2-05: "AI replies" is one of render_with_disclaimer's documented
+  // content types (10-16_disclaimers.sql) -- this tool IS that sender. Only
+  // for free text; a template's disclaimer (if any) is a footer component
+  // baked in when the template was created (see pack_templates.ts), not
+  // appended at send time.
+  if (content.type === "text") {
+    const { data: rendered, error } = await params.supabase
+      .schema("crm")
+      .rpc("render_with_disclaimer", {
+        p_organization_id: params.orgId,
+        p_content_type: "ai_message",
+        p_text: content.text,
+      })
+      .single();
+
+    if (error) throw error;
+
+    content = { ...content, text: rendered.text };
+  }
+
   await params.supabase
     .from("messages")
     .insert({
@@ -514,7 +532,7 @@ export async function sendMessage(params: SendMessageParams) {
       organization_address: account.address,
       conversation_address: contactPhone,
       service: "whatsapp",
-      content: params.content,
+      content,
     })
     .throwOnError();
 

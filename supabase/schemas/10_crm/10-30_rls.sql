@@ -280,3 +280,22 @@ alter table crm.templates enable row level security;
 create policy "members can read their orgs templates"
 on crm.templates for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Outbound send policy (P2-05) -----------------------------------------------------
+
+alter table crm.contacts_consent enable row level security;
+
+-- Writes are service-role only (the inbound STOP handler, and any future
+-- admin opt-in/opt-out action) -- no policy allows a member write.
+create policy "members can read their orgs consent events"
+on crm.contacts_consent for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+alter table crm.send_rate_buckets enable row level security;
+
+-- Pure send-path infrastructure (token-bucket state for the dispatcher's
+-- pacing check) -- no current UI reads this, but every organization_id
+-- table gets a real policy (P1-12's structural check), not a blanket deny.
+create policy "members can read their orgs send rate buckets"
+on crm.send_rate_buckets for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

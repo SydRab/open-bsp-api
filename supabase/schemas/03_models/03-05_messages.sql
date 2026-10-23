@@ -217,6 +217,18 @@ on public.messages
 for each row
 execute function public.notify_webhook();
 
+-- [crm] P2-05: keeps conversations.last_inbound_at current for the outbound
+-- send gate's window check. Only contact-authored rows move it, and only
+-- forward -- out-of-order webhook delivery (a real possibility; see
+-- preserve_conversation_addressing above) must not walk the window
+-- backwards and falsely close it.
+create trigger update_conversation_last_inbound_at
+after insert
+on public.messages
+for each row
+when (new.sender_address is not null)
+execute function public.update_conversation_last_inbound_at();
+
 -- Addressing is set (and validated against the conversation) at insert and
 -- frozen here; updates only fill sender_address once and merge content/status.
 create trigger preserve_addressing

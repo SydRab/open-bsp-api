@@ -32,6 +32,7 @@ import {
   updateTemplateQuality,
   updateTemplateStatus,
 } from "./whatsapp_templates.ts";
+import { getSetting, matchesOptOutKeyword } from "./send_policy.ts";
 
 const API_VERSION = "v24.0";
 
@@ -716,6 +717,40 @@ export async function processWhatsAppWebhookPayload(
 
           if (!content) {
             continue;
+          }
+
+          // [crm] P2-05: "STOP/unsubscribe is honored instantly" (CLAUDE.md).
+          // Live inbound text only -- this branch is the one case with a
+          // real sender_address (echoes/history below are not from the
+          // contact). Recorded regardless of whether the contact ever had
+          // an opt-in on file: an opt-out event is always safe to write, and
+          // crm.get_consent_status reads the latest row either way.
+          if (content.type === "text") {
+            const keywords = await getSetting<string[]>(
+              client,
+              organization_id,
+              "compliance.opt_out_keywords",
+            );
+            const matched = matchesOptOutKeyword(content.text, keywords);
+
+            if (matched) {
+              log.info("Inbound opt-out keyword matched", {
+                organization_id,
+                organization_address,
+                contact_address,
+                matched,
+              });
+
+              await client.schema("crm").rpc("record_consent_event", {
+                p_organization_id: organization_id,
+                p_organization_address: organization_address,
+                p_service: "whatsapp",
+                p_address: contact_address,
+                p_status: "opted_out",
+                p_source: "keyword",
+                p_keyword_matched: matched,
+              }).throwOnError();
+            }
           }
 
           const message = {

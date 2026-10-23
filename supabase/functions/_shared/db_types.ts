@@ -346,6 +346,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"contacts_consent": {
+                  Row: {
+                    "address": string,"created_at": string,"id": string,"keyword_matched": string | null,"note": string | null,"organization_address": string,"organization_id": string,"seq": number,"service": Database["public"]['Enums']["service"],"source": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address": string,"created_at"?: string,"id"?: string,"keyword_matched"?: string | null,"note"?: string | null,"organization_address": string,"organization_id": string,"seq"?: never,"service": Database["public"]['Enums']["service"],"source": string,"status": string
+                  }
+                  Update: {
+                    "address"?: string,"created_at"?: string,"id"?: string,"keyword_matched"?: string | null,"note"?: string | null,"organization_address"?: string,"organization_id"?: string,"seq"?: never,"service"?: Database["public"]['Enums']["service"],"source"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"disclaimer_versions": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": string,"kind": string,"locale": string,"organization_id": string,"text": string,"version": number
@@ -658,6 +672,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"send_rate_buckets": {
+                  Row: {
+                    "capacity": number,"organization_address": string,"organization_id": string,"refill_per_second": number,"service": Database["public"]['Enums']["service"],"tokens": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "capacity": number,"organization_address": string,"organization_id": string,"refill_per_second": number,"service": Database["public"]['Enums']["service"],"tokens": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "capacity"?: number,"organization_address"?: string,"organization_id"?: string,"refill_per_second"?: number,"service"?: Database["public"]['Enums']["service"],"tokens"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"setting_definitions": {
                   Row: {
                     "category": string,"created_at": string,"description": string | null,"edit_permission": string,"is_locked": boolean,"key": string,"label": string,"pack_item_key": string | null,"pack_item_kind": string | null,"pack_item_path": (string)[],"platform_default": NonNullable<Json>,"schema": NonNullable<Json>,"scopes": (string)[],"sort_order": number
@@ -894,6 +922,9 @@ isOneToOne: false
 "clear_organization_feature":
 { Args: { "p_feature_key": string,"p_organization_id": string }; Returns: undefined
                            },
+"count_recent_marketing_sends":
+{ Args: { "p_conversation_address": string,"p_organization_address": string,"p_organization_id": string,"p_period_days": number }; Returns: number
+                           },
 "create_custom_field":
 { Args: { "p_entity": string,"p_key": string,"p_label": Json,"p_options"?: Json,"p_organization_id": string,"p_required"?: boolean,"p_type": string }; Returns: string
                            },
@@ -961,6 +992,9 @@ isOneToOne: false
 { Args: { "p_actor"?: string,"p_area"?: string,"p_before_id"?: number,"p_from"?: string,"p_limit"?: number,"p_organization_id": string,"p_to"?: string }; Returns: {
               "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
             }[]
+                           },
+"get_consent_status":
+{ Args: { "p_address": string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"] }; Returns: string
                            },
 "get_disclaimers":
 { Args: { "p_organization_id": string }; Returns: {
@@ -1062,6 +1096,9 @@ isOneToOne: false
 "reactivate_organization":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"record_consent_event":
+{ Args: { "p_address": string,"p_keyword_matched"?: string,"p_note"?: string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source": string,"p_status": string }; Returns: undefined
+                           },
 "rename_team":
 { Args: { "p_name": string,"p_team_id": string }; Returns: undefined
                            },
@@ -1159,6 +1196,9 @@ isOneToOne: false
 "tier_rank":
 { Args: { "tier": Database["public"]['Enums']["role"] }; Returns: number
                            },
+"try_consume_send_token":
+{ Args: { "p_capacity": number,"p_cost"?: number,"p_organization_address": string,"p_organization_id": string,"p_refill_per_second": number,"p_service": Database["public"]['Enums']["service"] }; Returns: boolean
+                           },
 "update_custom_field":
 { Args: { "p_field_id": string,"p_label": Json,"p_options": Json,"p_required": boolean }; Returns: undefined
                            },
@@ -1251,14 +1291,14 @@ isOneToOne: false
                   ]
                 },"conversations": {
                   Row: {
-                    "address": string,"created_at": string,"extra": Json | null,"id": string,"name": string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type": string | null,"updated_at": string
+                    "address": string,"created_at": string,"extra": Json | null,"id": string,"last_inbound_at": string | null,"name": string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address": string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"name"?: string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
+                    "address": string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address": string,"organization_id": string,"service": Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"name"?: string | null,"organization_address"?: string,"organization_id"?: string,"service"?: Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
+                    "address"?: string,"created_at"?: string,"extra"?: Json | null,"id"?: string,"last_inbound_at"?: string | null,"name"?: string | null,"organization_address"?: string,"organization_id"?: string,"service"?: Database["public"]['Enums']["service"],"type"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {

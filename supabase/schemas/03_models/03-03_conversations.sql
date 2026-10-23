@@ -64,6 +64,14 @@ create table public.conversations (
   -- API role UPDATE on any service but `local`: the policy is what keeps
   -- members out, so nothing here needs a column of its own.
   extra jsonb,
+  -- [crm] P2-05: the timestamp of the latest message on this conversation
+  -- with sender_address not null (contact-authored), denormalized off
+  -- public.messages so the outbound send gate can check "is the 24h
+  -- customer service window open" with an indexed point lookup instead of
+  -- an aggregate scan of message history on every send. Maintained by
+  -- public.update_conversation_last_inbound_at (03-05). Null means no
+  -- inbound message yet -- the window is closed.
+  last_inbound_at timestamp with time zone,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

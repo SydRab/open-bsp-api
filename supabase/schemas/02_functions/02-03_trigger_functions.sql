@@ -60,6 +60,28 @@ begin
 end;
 $$;
 
+-- [crm] P2-05: denormalizes conversations.last_inbound_at off contact-authored
+-- messages (03-05 arms this only when sender_address is not null) for the
+-- outbound send gate's 24h window check. security definer + bypassing RLS,
+-- same reasoning as after_insert_on_organizations above: inbound rows are
+-- written by the webhook processor (service role already), but the
+-- conversation row's own UPDATE policy set should not gate a system fact
+-- that isn't user-editable content.
+create function public.update_conversation_last_inbound_at() returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $$
+begin
+  update public.conversations
+  set last_inbound_at = new.timestamp
+  where id = new.conversation_id
+    and (last_inbound_at is null or last_inbound_at < new.timestamp);
+
+  return new;
+end;
+$$;
+
 -- A deletion the deleted can undo is not a deletion. `members can update
 -- themselves` is keyed on user_id = auth.uid() alone, so a removed member
 -- reaches their own row and could otherwise clear deleted_at and restore every
