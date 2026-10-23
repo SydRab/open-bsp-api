@@ -20,6 +20,11 @@ import {
   categorizeMetaErrorCode,
   checkSendPolicy,
 } from "../_shared/send_policy.ts";
+import {
+  buildInteractiveButtonsPayload,
+  buildInteractiveFlowPayload,
+  buildInteractiveListPayload,
+} from "../_shared/interactive_messages.ts";
 
 const API_VERSION = "v24.0";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -359,6 +364,27 @@ function outgoingMessageToEndpointMessage({
         ...baseMessage,
         type: "template",
         template: content.data,
+      };
+    }
+    case "interactive_buttons": {
+      return {
+        ...baseMessage,
+        type: "interactive",
+        interactive: buildInteractiveButtonsPayload(content.data),
+      };
+    }
+    case "interactive_list": {
+      return {
+        ...baseMessage,
+        type: "interactive",
+        interactive: buildInteractiveListPayload(content.data),
+      };
+    }
+    case "interactive_flow": {
+      return {
+        ...baseMessage,
+        type: "interactive",
+        interactive: buildInteractiveFlowPayload(content.data),
       };
     }
     default: {

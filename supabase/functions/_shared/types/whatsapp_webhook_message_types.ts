@@ -184,6 +184,11 @@ export type ButtonMessage = {
 };
 
 // This message type is produced when the user interacts with an interactive message button or list option.
+// nfm_reply (P2-06) is the completion of a Flow message: response_json is a
+// JSON-encoded string (Meta's own choice, not ours), parsed by
+// webhookMessageToIncomingMessage into NfmReplyPart.data.response. Verified
+// directly against Meta's docs:
+// https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/receiveflowresponse
 export type InteractiveMessage = {
   type: "interactive";
   interactive:
@@ -191,6 +196,10 @@ export type InteractiveMessage = {
     | {
       type: "list_reply";
       list_reply: { id: string; title: string; description?: string };
+    }
+    | {
+      type: "nfm_reply";
+      nfm_reply: { name: string; body: string; response_json: string };
     };
 };
 

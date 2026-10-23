@@ -206,6 +206,71 @@ type ButtonPart = DataPart<"button", ButtonMessage["button"]>;
 
 type TemplatePart = DataPart<"template", Template>;
 
+// Outbound interactive messages (P2-06). Kept deliberately simpler than
+// Meta's exact wire shape (plain strings for body/footer/text headers, no
+// nested `{text: ...}` wrapper) -- the same "our own shape in, Meta's shape
+// out" convention Template already uses -- since the MCP sendMessage tool
+// (today's only real caller; see _shared/interactive_messages.ts) builds
+// these from plain arguments. Media headers (image/video/document) are a
+// known, deliberate gap: text-only for now, the common case. Limits (max 3
+// buttons, title lengths, etc.) are enforced by
+// _shared/interactive_messages.ts before one of these is ever built, not by
+// the type.
+export type InteractiveButtonsSendData = {
+  header?: string;
+  body: string;
+  footer?: string;
+  buttons: { id: string; title: string }[];
+};
+type InteractiveButtonsPart = DataPart<
+  "interactive_buttons",
+  InteractiveButtonsSendData
+>;
+
+export type InteractiveListSendData = {
+  header?: string;
+  body: string;
+  footer?: string;
+  button: string;
+  sections: {
+    title: string;
+    rows: { id: string; title: string; description?: string }[];
+  }[];
+};
+type InteractiveListPart = DataPart<
+  "interactive_list",
+  InteractiveListSendData
+>;
+
+// Sends an invite to open a Flow the organization already created in Meta
+// Business Manager directly -- this project sends/receives the message and
+// parses the nfm_reply completion, not the Flow's own screens/JSON.
+export type InteractiveFlowSendData = {
+  header?: string;
+  body: string;
+  footer?: string;
+  flow_token: string;
+  flow_cta: string;
+  flow_action?: "navigate" | "data_exchange";
+  flow_action_payload?: { screen: string; data?: Record<string, unknown> };
+  mode?: "draft" | "published";
+} & ({ flow_id: string } | { flow_name: string });
+type InteractiveFlowPart = DataPart<
+  "interactive_flow",
+  InteractiveFlowSendData
+>;
+
+// The inbound completion of a Flow message above. response_json arrives
+// from Meta as an escaped JSON string (its data varies per Flow); parsed
+// here into `response` so a consumer doesn't have to JSON.parse it again.
+// See whatsapp_webhook_message_types.ts's NfmReplyMessage for the raw shape
+// this is built from.
+export type NfmReplyPart = DataPart<"nfm_reply", {
+  name: string;
+  body: string;
+  response: Record<string, unknown>;
+}>;
+
 /**
  * A medium that arrived without its bytes: the Cloud API sends this when it
  * cannot hand the media over, and whatsapp-web sends it for media it did not
@@ -307,6 +372,7 @@ export type IncomingMessage =
     | OrderPart
     | InteractivePart
     | ButtonPart
+    | NfmReplyPart
     | MediaPlaceholderPart
     | UnsupportedPart
     | ReferralPart
@@ -350,6 +416,9 @@ export type OutgoingMessage =
     | LocationPart
     | TemplatePart
     | ReactionPart
+    | InteractiveButtonsPart
+    | InteractiveListPart
+    | InteractiveFlowPart
   );
 
 /**

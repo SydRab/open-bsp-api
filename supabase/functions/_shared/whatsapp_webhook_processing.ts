@@ -162,7 +162,7 @@ async function downloadMediaItem({
   return message;
 }
 
-function webhookMessageToIncomingMessage(
+export function webhookMessageToIncomingMessage(
   message: WebhookIncomingMessage | WebhookEchoMessage | WebhookHistoryMessage,
 ): IncomingMessage | undefined {
   let re_message_id: string | undefined;
@@ -318,6 +318,32 @@ function webhookMessageToIncomingMessage(
     }
 
     case "interactive": {
+      // [crm] P2-06: nfm_reply (a completed Flow) gets its own kind so
+      // response_json -- an escaped JSON string, Meta's choice, not ours --
+      // is parsed once here rather than by every later reader. A malformed
+      // response_json (shouldn't happen, but Meta doesn't guarantee it)
+      // falls back to the raw string under `_raw` instead of throwing and
+      // losing the whole webhook event.
+      if (message.interactive.type === "nfm_reply") {
+        const { name, body, response_json } = message.interactive.nfm_reply;
+        let response: Record<string, unknown>;
+        try {
+          response = JSON.parse(response_json);
+        } catch {
+          log.warn("nfm_reply.response_json was not valid JSON", {
+            response_json,
+          });
+          response = { _raw: response_json };
+        }
+
+        return {
+          ...baseMessage,
+          type: "data",
+          kind: "nfm_reply",
+          data: { name, body, response },
+        };
+      }
+
       return {
         ...baseMessage,
         type: "data",
