@@ -255,6 +255,18 @@ when (
 )
 execute function public.merge_update('status');
 
+-- [crm] P2-08: must run AFTER set_status's merge (name sorts after
+-- 'set_status', same convention z_notify_webhook_messages uses for
+-- last-in-order) so it inspects the merged result, not the raw patch.
+create trigger z_enforce_forward_only_status
+before update
+on public.messages
+for each row
+when (
+  new.status is not null
+)
+execute function public.enforce_forward_only_status();
+
 create trigger set_updated_at
 before update
 on public.messages

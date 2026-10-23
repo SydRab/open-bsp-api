@@ -11,10 +11,12 @@ import {
   type Database,
   type EditedMessage,
   type IncomingMessage,
+  type Json,
   type MessageInsert,
   type MetaWebhookPayload,
   type OrganizationAddressRow,
   type OutgoingMessage,
+  type OutgoingStatus,
   type WebhookEchoMessage,
   type WebhookError,
   type WebhookHistoryMessage,
@@ -447,7 +449,10 @@ export async function processWhatsAppWebhookPayload(
   const orgAddressMap = await buildOrgAddressMap(client, uniqueOrgAddresses);
 
   const messages: MessageInsert[] = [];
-  const statuses: MessageInsert[] = [];
+  // [crm] P2-08: external_id + status only -- applied via
+  // public.apply_message_statuses, an UPDATE-only RPC that never creates a
+  // row, so none of MessageInsert's other required columns are needed here.
+  const statuses: { external_id: string; status: OutgoingStatus }[] = [];
   const contacts_addresses: ContactAddressInsert[] = [];
   // Coexistence edit/revoke events modify existing rows by their ORIGINAL id,
   // so they are applied as UPDATEs after the upserts rather than batched.
@@ -807,14 +812,7 @@ export async function processWhatsAppWebhookPayload(
       if (field === "messages" && "statuses" in value) {
         for (const status of value.statuses) {
           statuses.push({
-            organization_id:
-              orgAddressMap.get(organization_address)!.organization_id,
             external_id: status.id,
-            service: "whatsapp",
-            organization_address,
-            conversation_address: status.recipient_id ??
-              status.recipient_user_id,
-            content: {} as OutgoingMessage, // this will get merged (it won't overwrite)
             status: {
               [status.status]: new Date(
                 parseInt(status.timestamp) * 1000,
@@ -1269,47 +1267,62 @@ export async function processWhatsAppWebhookPayload(
     });
   }
 
-  // Notes for statuses:
-  // 1. Upsert is needed because there is no bulk update
-  // 2. Insert operation is not expected, because statuses come
-  //    after outgoing messages are inserted
-  // 3. Only the `status` field should be updated based on external_id,
-  //    but upsert requires records to be prepared for insertion (which won't happen)
-  // 4. `content` field is set to empty object {}, it will be merged
-  //    with existing content during update (inocuous)
-
-  // Notes for messages:
-  // Download media before upserting incoming messages
-  // Patched messages include media local id and file size
+  // Download media before upserting incoming messages. Patched messages
+  // include media local id and file size.
   const patchedMessages = await downloadMediaPromise;
 
-  // A status row (content `{}`) and a message row can carry the same
-  // external_id within one webhook (e.g. an echo plus a status/edit/revoke for
-  // the same WAMID). We upsert statuses and messages in two separate statements
-  // rather than deduping: Postgres' ON CONFLICT cannot affect the same row twice
-  // in one statement, and a last-wins dedup would drop the complementary half
-  // (content vs status) that the merge trigger is meant to combine.
-  const upsertBatch = async (label: string, rows: MessageInsert[]) => {
-    if (rows.length === 0) return;
-
+  // A status row and a message row can carry the same external_id within
+  // one webhook (e.g. an echo plus a status for the same WAMID). Messages
+  // first, statuses second: public.apply_message_statuses only UPDATEs
+  // existing rows (P2-08 -- see its own comment for why), so if the two
+  // arrived in the same batch, the message row needs to exist before its
+  // status is applied, or the status silently no-ops as an orphan.
+  if (patchedMessages.length > 0) {
     const { error } = await client
       .from("messages")
-      .upsert(rows, { onConflict: "external_id" });
+      .upsert(patchedMessages, { onConflict: "external_id" });
 
     if (error) {
-      log.error(`Failed to upsert ${label}`, {
+      log.error("Failed to upsert messages", {
         error,
         organizations: orgSummary,
-        count: rows.length,
+        count: patchedMessages.length,
       });
       throw error;
     }
 
-    log.info(`Persisted ${label}`, { count: rows.length });
-  };
+    log.info("Persisted messages", { count: patchedMessages.length });
+  }
 
-  await upsertBatch("statuses", statuses);
-  await upsertBatch("messages", patchedMessages);
+  if (statuses.length > 0) {
+    const { data: matched, error } = await client.rpc(
+      "apply_message_statuses",
+      { p_statuses: statuses as unknown as Json },
+    );
+
+    if (error) {
+      log.error("Failed to apply statuses", {
+        error,
+        organizations: orgSummary,
+        count: statuses.length,
+      });
+      throw error;
+    }
+
+    const matchedIds = new Set(matched ?? []);
+    const orphaned = statuses
+      .map((s) => s.external_id)
+      .filter((id) => !matchedIds.has(id));
+
+    if (orphaned.length > 0) {
+      log.warn(
+        "Status event(s) for an external_id we have no message row for -- dropped, not fabricated",
+        { organizations: orgSummary, external_ids: orphaned },
+      );
+    }
+
+    log.info("Persisted statuses", { count: matchedIds.size });
+  }
 
   // Apply edits and revokes as in-place updates keyed by the ORIGINAL message
   // id (not the event's own id). They modify existing rows, so an UPDATE lets

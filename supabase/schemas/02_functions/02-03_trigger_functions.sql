@@ -658,3 +658,80 @@ begin
   return new;
 end;
 $$;
+
+-- [crm] P2-08: forward-only status. Runs after set_status's merge_update
+-- (trigger name sorts after 'set_status' -- same 'z_' late-ordering
+-- convention as z_notify_webhook_messages), so it sees the ALREADY-MERGED
+-- NEW.status and only has to strip regressions, not redo the merge.
+--
+-- Async, cron-batched webhook processing (P2-01) means status events for
+-- the same message can be applied out of the order Meta's own timeline
+-- implies -- a "sent" event sitting in one batch can be processed after a
+-- "delivered"/"read" from a later batch already landed. Without this, a
+-- stale low-rank event would ADD its key to the status object and
+-- MessageStatusUtils.ts's getHighestStatus (which always shows the
+-- highest-ranked key PRESENT, scanning this exact same order) would flip
+-- the UI backwards -- most visibly, a stale "failed" replay landing on an
+-- already-delivered message would show a red X over what the recipient
+-- actually received.
+--
+-- Only NEWLY ADDED keys are checked (not already in OLD.status): a
+-- re-merge of a key's own value (e.g. errors refreshing on a retry) is not
+-- a regression, it is the same rung restating itself. "errors" and the
+-- held_* keys (_shared/send_policy.ts's quiet-hours/pacing holds) are
+-- intentionally absent from the rank map: they are side-channel/retry
+-- bookkeeping, not progress rungs, and must always be free to update.
+--
+-- "failed" is handled separately from the ladder, not given a rank in it:
+-- MessageStatusUtils.ts's getHighestStatus ranks it ABOVE delivered/read so
+-- a real failure is never hidden behind an earlier success -- but that same
+-- ranking would make a naive rank comparison let a stale "failed" replay
+-- OVERWRITE a confirmed delivery, exactly the regression this trigger
+-- exists to stop. The real rule is narrower: a newly-introduced "failed"
+-- is dropped only once "delivered" or "read" is already recorded (Meta
+-- does not walk back a genuine delivery for the same WAMID); failing from
+-- pending/accepted/sent -- the common, legitimate case -- is untouched.
+create function public.enforce_forward_only_status() returns trigger
+language plpgsql
+as $$
+declare
+  rank_of jsonb := '{
+    "pending": 0,
+    "held_for_quality_assessment": 1,
+    "accepted": 2,
+    "sent": 3,
+    "delivered": 4,
+    "read": 5
+  }'::jsonb;
+  highest_rank int := -1;
+  new_rank int;
+  key text;
+begin
+  if old.status is null or new.status is null then
+    return new;
+  end if;
+
+  for key in select jsonb_object_keys(old.status) loop
+    if rank_of ? key and (rank_of ->> key)::int > highest_rank then
+      highest_rank := (rank_of ->> key)::int;
+    end if;
+  end loop;
+
+  if new.status ? 'failed' and not (old.status ? 'failed')
+    and (old.status ? 'delivered' or old.status ? 'read') then
+    new.status := new.status - 'failed';
+  end if;
+
+  for key in select jsonb_object_keys(new.status) loop
+    new_rank := (rank_of ->> key)::int;
+
+    if new_rank is not null
+      and new_rank < highest_rank
+      and not (old.status ? key) then
+      new.status := new.status - key;
+    end if;
+  end loop;
+
+  return new;
+end;
+$$;

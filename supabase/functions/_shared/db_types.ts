@@ -1532,6 +1532,9 @@ isOneToOne: false
 "agent_identity_unchanged":
 { Args: { "p_id": string,"p_organization_id": string,"p_user_id": string }; Returns: boolean
                            },
+"apply_message_statuses":
+{ Args: { "p_statuses": Json }; Returns: string[]
+                           },
 "get_authorized_orgs":
 { Args: { "role"?: Database["public"]['Enums']["role"] }; Returns: string[]
                            },
