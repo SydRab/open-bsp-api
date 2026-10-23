@@ -21,6 +21,7 @@ import { submitPackTemplates } from "./pack_templates.ts";
 import {
   deleteSignup,
   performEmbeddedSignup,
+  postRegisterPhoneNumber,
   recordSignupPopupEvent,
   SignupPayload,
   type SignupPopupEvent,
@@ -28,9 +29,17 @@ import {
 import { checkTokenHealth } from "./token_health.ts";
 import { checkNumberQuality } from "./number_health.ts";
 import {
+  type BusinessProfileFields,
+  getBusinessProfile,
+  requestDisplayNameChange,
+  updateBusinessProfile,
+} from "./business_profile.ts";
+import { getWhatsAppAccessToken } from "../_shared/whatsapp_credentials.ts";
+import {
   type ManagementEnv,
   ownsAddress,
   requireRoles,
+  requireRolesOrOwnAddress,
   requireScope,
 } from "../_shared/management_auth.ts";
 
@@ -402,6 +411,104 @@ app.delete(
     );
 
     return c.json(address);
+  },
+);
+
+// Business profile and display-name status (P2-11). Viewing is open to
+// any member; writing (editing the profile, requesting a name change, or
+// re-registering) needs admin+ unless the caller owns this user-scoped
+// address themselves -- same split as every other write here.
+
+app.get(
+  "/whatsapp-management/business-profile/:address",
+  requireRoles(["member", "admin", "owner"]),
+  async (c) => {
+    const organization_id = c.req.query("organization_id")!;
+    const address = c.req.param("address") ?? "";
+
+    const client = createUnsecureClient();
+    const access_token = await getWhatsAppAccessToken(
+      client,
+      organization_id,
+      address,
+    );
+    const profile = await getBusinessProfile(access_token, address);
+
+    return c.json(profile);
+  },
+);
+
+app.post(
+  "/whatsapp-management/business-profile/:address",
+  requireRolesOrOwnAddress("whatsapp", requireRoles(["admin", "owner"])),
+  async (c) => {
+    const organization_id = c.req.query("organization_id")!;
+    const address = c.req.param("address") ?? "";
+    const fields = await c.req.json<BusinessProfileFields>();
+
+    const client = createUnsecureClient();
+    const access_token = await getWhatsAppAccessToken(
+      client,
+      organization_id,
+      address,
+    );
+    const success = await updateBusinessProfile(access_token, address, fields);
+
+    return c.json({ success });
+  },
+);
+
+// Submits a new name for review -- the phone_number_name_update webhook
+// (whatsapp_webhook_processing.ts) reports the decision once Meta reviews
+// it, persisted onto organizations_addresses.extra.
+app.post(
+  "/whatsapp-management/display-name/:address",
+  requireRolesOrOwnAddress("whatsapp", requireRoles(["admin", "owner"])),
+  async (c) => {
+    const organization_id = c.req.query("organization_id")!;
+    const address = c.req.param("address") ?? "";
+    const { new_display_name } = await c.req.json<
+      { new_display_name: string }
+    >();
+
+    const client = createUnsecureClient();
+    const access_token = await getWhatsAppAccessToken(
+      client,
+      organization_id,
+      address,
+    );
+    const success = await requestDisplayNameChange(
+      access_token,
+      address,
+      new_display_name,
+    );
+
+    return c.json({ success });
+  },
+);
+
+// The step after Meta approves a name change: re-registers the number so
+// the new name actually takes effect. Needs the number's own 2-step
+// verification PIN -- asked for right here, never stored (unlike the
+// Embedded Signup flow's own registration call, which uses a fixed
+// placeholder PIN for a brand-new number that has none yet to match).
+app.post(
+  "/whatsapp-management/display-name/:address/reregister",
+  requireRolesOrOwnAddress("whatsapp", requireRoles(["admin", "owner"])),
+  async (c) => {
+    const organization_id = c.req.query("organization_id")!;
+    const address = c.req.param("address") ?? "";
+    const { pin } = await c.req.json<{ pin: string }>();
+
+    const client = createUnsecureClient();
+    const access_token = await getWhatsAppAccessToken(
+      client,
+      organization_id,
+      address,
+    );
+    const success = await postRegisterPhoneNumber(access_token, address, pin);
+
+    return c.json({ success });
   },
 );
 

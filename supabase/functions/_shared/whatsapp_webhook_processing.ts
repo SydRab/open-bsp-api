@@ -39,6 +39,37 @@ import { isLimitDowngraded } from "./number_health.ts";
 
 const API_VERSION = "v24.0";
 
+const digitsOnly = (s: string) => s.replace(/\D/g, "");
+
+/** [crm] P2-10/P2-11: a WABA can have more than one connected number, so
+ * the generic "most recent row for this waba_id" lookup used for the
+ * WABA-level events (templates) is only right by coincidence for a
+ * phone-number-level event. Re-resolves the SPECIFIC row by the event's
+ * own display_phone_number, matched digits-only since Meta's webhook and
+ * the GET endpoint's extra.phone_number (stored at connect time) aren't
+ * guaranteed to use the same formatting. Falls back to `fallback` (the
+ * generic lookup's result) if no exact match is found. */
+async function resolveAddressByDisplayPhone(
+  client: SupabaseClient<Database>,
+  waba_id: string,
+  display_phone_number: string,
+  fallback: OrganizationAddressRow,
+): Promise<OrganizationAddressRow> {
+  const target = digitsOnly(display_phone_number);
+
+  const { data: candidates } = await client
+    .from("organizations_addresses")
+    .select()
+    .eq("extra->>waba_id", waba_id)
+    .throwOnError();
+
+  return candidates?.find((row) => {
+    const rowExtra = row.extra as WhatsAppOrganizationAddressExtra | null;
+    return rowExtra?.phone_number &&
+      digitsOnly(rowExtra.phone_number) === target;
+  }) ?? fallback;
+}
+
 /**
  * Queries the database for organization addresses and returns a map.
  * Fetches first active address per address value (ordered by created_at desc).
@@ -654,29 +685,12 @@ export async function processWhatsAppWebhookPayload(
             );
           }
         } else if (field === "phone_number_quality_update") {
-          // [crm] P2-10: re-resolve the SPECIFIC row this event is about --
-          // `address` above is just whichever row for this waba_id was
-          // connected most recently, which is only right by coincidence
-          // once a WABA has more than one connected number. Matched by
-          // digits only: Meta's webhook display_phone_number and the GET
-          // endpoint's extra.phone_number (stored at connect time) aren't
-          // guaranteed to use the same formatting.
-          const digitsOnly = (s: string) => s.replace(/\D/g, "");
-          const target = digitsOnly(value.display_phone_number);
-
-          const { data: candidates } = await client
-            .from("organizations_addresses")
-            .select()
-            .eq("extra->>waba_id", waba_id)
-            .throwOnError();
-
-          const specific = candidates?.find((row) => {
-            const rowExtra = row.extra as
-              | WhatsAppOrganizationAddressExtra
-              | null;
-            return rowExtra?.phone_number &&
-              digitsOnly(rowExtra.phone_number) === target;
-          }) ?? address;
+          const specific = await resolveAddressByDisplayPhone(
+            client,
+            waba_id,
+            value.display_phone_number,
+            address,
+          );
 
           const specificExtra =
             (specific.extra ?? {}) as WhatsAppOrganizationAddressExtra;
@@ -715,6 +729,47 @@ export async function processWhatsAppWebhookPayload(
                 })
                 .throwOnError();
             }
+          }
+        } else if (field === "phone_number_name_update") {
+          // [crm] P2-11: same multi-number resolution fix as
+          // phone_number_quality_update above -- this event is also
+          // phone-number-level, not WABA-level.
+          const specific = await resolveAddressByDisplayPhone(
+            client,
+            waba_id,
+            value.display_phone_number,
+            address,
+          );
+
+          await client
+            .from("organizations_addresses")
+            .update({
+              extra: {
+                name_status: value.decision,
+                requested_verified_name: value.requested_verified_name,
+                name_rejection_reason: value.rejection_reason,
+                name_checked_at: new Date().toISOString(),
+              },
+            })
+            .eq("organization_id", specific.organization_id)
+            .eq("address", specific.address)
+            .throwOnError();
+
+          if (value.decision === "REJECTED") {
+            await client
+              .from("logs")
+              .insert({
+                organization_id: specific.organization_id,
+                organization_address: specific.address,
+                category: "whatsapp_display_name",
+                service: "whatsapp",
+                level: "warning",
+                message:
+                  `WhatsApp display name change rejected: "${value.requested_verified_name}" (${
+                    value.rejection_reason ?? "unknown reason"
+                  })`,
+              })
+              .throwOnError();
           }
         }
 

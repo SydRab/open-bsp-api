@@ -5,6 +5,10 @@
 // messaging-limit tier is the opposite shape -- no polling field for it,
 // only ever delivered via the phone_number_quality_update webhook, handled
 // in whatsapp_webhook_processing.ts instead.
+//
+// [crm] P2-11: the same GET call also returns verified_name, so this is
+// also where a pending display-name change (phone_number_name_update
+// webhook) gets resolved -- see the nameResolved check below.
 // https://developers.facebook.com/docs/whatsapp/cloud-api/reference/phone-numbers
 import * as log from "../_shared/logger.ts";
 import type {
@@ -53,12 +57,20 @@ export async function checkNumberQuality(client: Client) {
     }
 
     try {
-      const { quality_rating } = await getPhoneNumber(
+      const { quality_rating, verified_name } = await getPhoneNumber(
         access_token,
         row.address,
       );
 
       const degraded = isQualityDegraded(extra.quality_rating, quality_rating);
+
+      // [crm] P2-11: this is also where a pending display-name change gets
+      // resolved -- re-registering after Meta's approval is what actually
+      // makes verified_name catch up, and this is the one place that
+      // re-polls it. Once it matches the requested name, the change has
+      // taken effect, so there's nothing left pending to show.
+      const nameResolved = extra.requested_verified_name &&
+        verified_name === extra.requested_verified_name;
 
       await client
         .from("organizations_addresses")
@@ -66,6 +78,14 @@ export async function checkNumberQuality(client: Client) {
           extra: {
             quality_rating,
             quality_checked_at: new Date(now).toISOString(),
+            verified_name,
+            ...(nameResolved
+              ? {
+                name_status: null,
+                requested_verified_name: null,
+                name_rejection_reason: null,
+              }
+              : {}),
           },
         })
         .eq("organization_id", row.organization_id)

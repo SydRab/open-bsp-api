@@ -71,6 +71,14 @@ export type WhatsAppOrganizationAddressExtra = {
   // webhook (whatsapp_webhook_processing.ts).
   messaging_limit_tier?: string | null; // "TIER_50".."TIER_UNLIMITED"/"TIER_NOT_SET"
   messaging_limit_checked_at?: string | null; // ISO; last webhook-driven update
+  // [crm] P2-11: display-name change status, from the phone_number_name_update
+  // webhook (whatsapp_webhook_processing.ts) -- cleared once verified_name
+  // (refreshed by number_health.ts's daily poll) catches up to the
+  // requested name, i.e. the change actually took effect after re-registering.
+  name_status?: "APPROVED" | "REJECTED" | "PENDING" | "DEFERRED" | null;
+  requested_verified_name?: string | null;
+  name_rejection_reason?: string | null;
+  name_checked_at?: string | null; // ISO; last webhook-driven update
 };
 
 export type InstagramOrganizationAddressExtra = {
