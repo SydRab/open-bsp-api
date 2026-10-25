@@ -116,6 +116,11 @@ create table crm.leads (
   stage_id uuid,
   quality_id uuid,
   drop_reason_id uuid,
+  -- [crm] P3-04: the qualification engine's computed total (crm.
+  -- qualification_question_scores, 10-29p). Null until qualification
+  -- completes; a manual quality/status override afterwards does not clear
+  -- it -- it stays as a record of what the engine computed.
+  score int,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

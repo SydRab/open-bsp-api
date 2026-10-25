@@ -470,6 +470,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"lead_qualification_state": {
+                  Row: {
+                    "asked_at": string | null,"completed_at": string | null,"created_at": string,"current_question_key": string | null,"last_nudged_at": string | null,"lead_id": string,"nudge_count": number,"organization_id": string,"updated_at": string,"_send_nudge": undefined | null
+                  }
+                  ComputedFields: "_send_nudge"
+                  Insert: {
+                    "asked_at"?: string | null,"completed_at"?: string | null,"created_at"?: string,"current_question_key"?: string | null,"last_nudged_at"?: string | null,"lead_id": string,"nudge_count"?: number,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "asked_at"?: string | null,"completed_at"?: string | null,"created_at"?: string,"current_question_key"?: string | null,"last_nudged_at"?: string | null,"lead_id"?: string,"nudge_count"?: number,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lead_qualification_state_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: true
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"lead_qualities": {
                   Row: {
                     "created_at": string,"id": string,"is_preset": boolean,"key": string,"name": string,"organization_id": string,"sort_order": number,"updated_at": string
@@ -500,14 +520,14 @@ isOneToOne: false
                   ]
                 },"leads": {
                   Row: {
-                    "contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
+                    "contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -762,6 +782,52 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"preset_qualification_question_scores": {
+                  Row: {
+                    "answer_value": string,"field_key": string,"pack_key": string,"points": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer_value": string,"field_key": string,"pack_key": string,"points": number
+                  }
+                  Update: {
+                    "answer_value"?: string,"field_key"?: string,"pack_key"?: string,"points"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "preset_qualification_question_scores_pack_fkey"
+      columns: ["pack_key"]
+isOneToOne: false
+      referencedRelation: "vertical_packs"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"preset_qualification_score_thresholds": {
+                  Row: {
+                    "min_score": number,"pack_key": string,"quality_key": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "min_score": number,"pack_key": string,"quality_key": string,"status": string
+                  }
+                  Update: {
+                    "min_score"?: number,"pack_key"?: string,"quality_key"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "preset_qualification_score_thresholds_pack_fkey"
+      columns: ["pack_key"]
+isOneToOne: false
+      referencedRelation: "vertical_packs"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "preset_qualification_score_thresholds_quality_fkey"
+      columns: ["quality_key"]
+isOneToOne: false
+      referencedRelation: "preset_lead_qualities"
+      referencedColumns: ["key"]
+    }
+                  ]
                 },"preset_role_permissions": {
                   Row: {
                     "permission": string,"role_key": string
@@ -801,6 +867,40 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"qualification_question_scores": {
+                  Row: {
+                    "answer_value": string,"created_at": string,"field_key": string,"id": string,"organization_id": string,"points": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer_value": string,"created_at"?: string,"field_key": string,"id"?: string,"organization_id": string,"points": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "answer_value"?: string,"created_at"?: string,"field_key"?: string,"id"?: string,"organization_id"?: string,"points"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"qualification_score_thresholds": {
+                  Row: {
+                    "created_at": string,"id": string,"min_score": number,"organization_id": string,"quality_id": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"min_score": number,"organization_id": string,"quality_id"?: string | null,"status": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"min_score"?: number,"organization_id"?: string,"quality_id"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "qualification_score_thresholds_quality_fkey"
+      columns: ["organization_id","quality_id"]
+isOneToOne: false
+      referencedRelation: "lead_qualities"
+      referencedColumns: ["organization_id","id"]
+    }
                   ]
                 },"role_permissions": {
                   Row: {
@@ -1035,6 +1135,36 @@ isOneToOne: false
             "_ensure_lead":
 { Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
                            },
+"_next_qualification_question":
+{ Args: { "p_contact_id": string,"p_organization_id": string }; Returns: {
+              "created_at": string,
+"id": string,
+"is_customized": boolean,
+"item_key": string,
+"kind": string,
+"organization_id": string,
+"pack_value": Json | null,
+"pack_version": number,
+"removed_from_pack": boolean,
+"sort_order": number,
+"updated_at": string,
+"value": NonNullable<Json>
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "organization_pack_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"_score_and_complete_qualification":
+{ Args: { "p_contact_id": string,"p_lead_id": string,"p_organization_id": string }; Returns: undefined
+                           },
+"_send_nudge":
+{ Args: { "p_state": Omit<Database["crm"]['Tables']["lead_qualification_state"]['Row'], Database["crm"]['Tables']["lead_qualification_state"]['ComputedFields']> }; Returns: undefined
+                           },
+"_send_qualification_question":
+{ Args: { "p_contact_id": string,"p_conversation_address": string,"p_conversation_id": string,"p_is_nudge"?: boolean,"p_organization_address": string,"p_organization_id": string,"p_question": Omit<Database["crm"]['Tables']["organization_pack_items"]['Row'], Database["crm"]['Tables']["organization_pack_items"]['ComputedFields']>,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
+                           },
 "admin_get_audit_log":
 { Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
               "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
@@ -1169,6 +1299,12 @@ isOneToOne: false
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_lead_stage":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_qualification_question_score":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_score_threshold":
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_tag":
@@ -1379,6 +1515,9 @@ isOneToOne: false
 "seed_lead_catalogs":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"seed_qualification_scoring":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
                            },
@@ -1418,11 +1557,17 @@ isOneToOne: false
 "set_organization_tier":
 { Args: { "p_admin_id": string,"p_organization_id": string,"p_tier_id": string }; Returns: undefined
                            },
+"set_qualification_question_score":
+{ Args: { "p_answer_value": string,"p_field_key": string,"p_organization_id": string,"p_points": number }; Returns: string
+                           },
 "set_require_mfa_for_admins":
 { Args: { "p_organization_id": string,"p_required": boolean }; Returns: undefined
                            },
 "set_role_permission":
 { Args: { "p_enabled": boolean,"p_permission": string,"p_role_id": string }; Returns: undefined
+                           },
+"set_score_threshold":
+{ Args: { "p_min_score": number,"p_organization_id": string,"p_quality_id": string,"p_status": string }; Returns: string
                            },
 "set_setting":
 { Args: { "p_key": string,"p_organization_id": string,"p_scope"?: string,"p_target"?: string,"p_value": Json }; Returns: undefined
@@ -1441,6 +1586,9 @@ isOneToOne: false
                            },
 "suspend_organization":
 { Args: { "p_organization_id": string,"p_reason"?: string }; Returns: undefined
+                           },
+"sweep_qualification_nudges":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "tier_rank":
 { Args: { "tier": Database["public"]['Enums']["role"] }; Returns: number

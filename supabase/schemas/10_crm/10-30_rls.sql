@@ -363,3 +363,27 @@ using (organization_id in (select public.get_authorized_orgs('member')));
 create policy "members can read their orgs leads"
 on crm.leads for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Qualification engine (P3-04) --------------------------------------------------------
+
+alter table crm.lead_qualification_state enable row level security;
+alter table crm.qualification_question_scores enable row level security;
+alter table crm.qualification_score_thresholds enable row level security;
+
+-- Writes are entirely trigger/system-driven (crm.z_run_qualification_engine,
+-- crm._send_nudge) -- no member-facing write function exists for this
+-- table, so it is read-only to members, same bar as the lead catalogs.
+create policy "members can read their orgs qualification state"
+on crm.lead_qualification_state for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Writes go through crm.set_qualification_question_score & co., gated on
+-- organization.manage; reading the catalog is open to any member, same bar
+-- as the other lead catalogs.
+create policy "members can read their orgs qualification question scores"
+on crm.qualification_question_scores for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "members can read their orgs qualification score thresholds"
+on crm.qualification_score_thresholds for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

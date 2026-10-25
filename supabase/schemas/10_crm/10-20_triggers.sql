@@ -20,6 +20,9 @@ begin
   perform crm.apply_default_pack(new.id);
   -- [crm] P3-02
   perform crm.seed_lead_catalogs(new.id);
+  -- [crm] P3-04: after seed_lead_catalogs, so crm.lead_qualities already
+  -- has rows for seed_qualification_scoring to resolve quality_key against.
+  perform crm.seed_qualification_scoring(new.id);
 
   return null;
 end;

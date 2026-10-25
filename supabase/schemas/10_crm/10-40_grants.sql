@@ -103,6 +103,15 @@ grant execute on function crm.set_lead_stage(uuid, uuid) to authenticated;
 grant execute on function crm.set_lead_quality(uuid, uuid) to authenticated;
 grant execute on function crm.set_lead_status(uuid, text, uuid) to authenticated;
 
+-- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
+-- engine and the internal functions it calls) is trigger/system-only, no
+-- grant needed beyond the blanket service_role baseline above. Only the
+-- scoring catalog's own CRUD is member-callable.
+grant execute on function crm.set_qualification_question_score(uuid, text, text, int) to authenticated;
+grant execute on function crm.delete_qualification_question_score(uuid) to authenticated;
+grant execute on function crm.set_score_threshold(uuid, int, uuid, text) to authenticated;
+grant execute on function crm.delete_score_threshold(uuid) to authenticated;
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
