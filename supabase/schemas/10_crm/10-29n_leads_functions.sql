@@ -264,10 +264,14 @@ $$;
 
 -- Leads -----------------------------------------------------------------------------------------
 
--- The dedupe/reopen entry point. Deliberately not wired into any trigger
--- yet (scope cut, P3-02) -- whichever task first needs a lead to exist
--- (P3-03's instant welcome, P3-04's qualification engine) calls this.
-create function crm.find_or_create_lead(
+-- The dedupe/reopen/create core, no permission check -- P3-03's instant-
+-- welcome trigger (10-29o) calls this directly, since a trigger has no
+-- member/JWT context for crm.require_permission to check (same reasoning
+-- crm.after_insert_on_contacts_addresses skips a permission check
+-- entirely: it's a system side effect, not a user action). The public,
+-- permission-checked crm.find_or_create_lead below is for a future human-
+-- facing caller (e.g. a manual "add lead" action) and just wraps this.
+create function crm._ensure_lead(
   p_organization_id uuid,
   p_contact_id uuid,
   p_source text
@@ -280,8 +284,6 @@ declare
   v_lead crm.leads;
   v_id uuid;
 begin
-  perform crm.require_permission(p_organization_id, 'deals.edit');
-
   select * into v_lead from crm.leads
   where organization_id = p_organization_id and contact_id = p_contact_id;
 
@@ -315,6 +317,23 @@ begin
   );
 
   return v_id;
+end;
+$$;
+
+-- Member-facing wrapper: same dedupe/reopen/create, gated on deals.edit.
+create function crm.find_or_create_lead(
+  p_organization_id uuid,
+  p_contact_id uuid,
+  p_source text
+) returns uuid
+language plpgsql
+security definer
+set search_path to ''
+as $$
+begin
+  perform crm.require_permission(p_organization_id, 'deals.edit');
+
+  return crm._ensure_lead(p_organization_id, p_contact_id, p_source);
 end;
 $$;
 

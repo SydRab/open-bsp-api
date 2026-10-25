@@ -30,6 +30,11 @@ create table crm.contacts (
   first_touch_at timestamp with time zone,
   last_touch_referral jsonb,
   last_touch_at timestamp with time zone,
+  -- [crm] P3-03: set once the instant-welcome language-choice message has
+  -- been sent, so a contact who hasn't replied yet doesn't get it again on
+  -- every subsequent message before they answer (crm.z_welcome_and_create_
+  -- lead, 10-29o_instant_welcome.sql).
+  welcome_sent_at timestamp with time zone,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

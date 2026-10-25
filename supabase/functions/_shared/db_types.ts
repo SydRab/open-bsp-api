@@ -348,14 +348,14 @@ isOneToOne: false
                   ]
                 },"contacts": {
                   Row: {
-                    "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"first_touch_at": string | null,"first_touch_referral": Json | null,"id": string,"last_touch_at": string | null,"last_touch_referral": Json | null,"locale": string | null,"organization_id": string,"updated_at": string
+                    "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"first_touch_at": string | null,"first_touch_referral": Json | null,"id": string,"last_touch_at": string | null,"last_touch_referral": Json | null,"locale": string | null,"organization_id": string,"updated_at": string,"welcome_sent_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id": string,"updated_at"?: string
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id": string,"updated_at"?: string,"welcome_sent_at"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id"?: string,"updated_at"?: string
+                    "created_at"?: string,"custom_fields"?: NonNullable<Json>,"display_name"?: string | null,"first_touch_at"?: string | null,"first_touch_referral"?: Json | null,"id"?: string,"last_touch_at"?: string | null,"last_touch_referral"?: Json | null,"locale"?: string | null,"organization_id"?: string,"updated_at"?: string,"welcome_sent_at"?: string | null
                   }
                   Relationships: [
                     
@@ -1032,7 +1032,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_get_audit_log":
+            "_ensure_lead":
+{ Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
+                           },
+"admin_get_audit_log":
 { Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
               "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
             }[]
@@ -1195,7 +1198,8 @@ isOneToOne: false
 "last_touch_referral": Json | null,
 "locale": string | null,
 "organization_id": string,
-"updated_at": string
+"updated_at": string,
+"welcome_sent_at": string | null
             }[]
                           SetofOptions: {
         from: "*"
