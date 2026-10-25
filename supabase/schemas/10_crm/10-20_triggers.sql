@@ -18,6 +18,8 @@ begin
 
   perform crm.create_preset_roles(new.id);
   perform crm.apply_default_pack(new.id);
+  -- [crm] P3-02
+  perform crm.seed_lead_catalogs(new.id);
 
   return null;
 end;

@@ -333,3 +333,33 @@ alter table crm.canned_replies enable row level security;
 create policy "members can read their orgs canned replies"
 on crm.canned_replies for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Lead model (P3-02) ---------------------------------------------------------------
+
+alter table crm.lead_stages enable row level security;
+alter table crm.lead_qualities enable row level security;
+alter table crm.lead_drop_reasons enable row level security;
+alter table crm.leads enable row level security;
+
+-- Writes go through crm.create_lead_stage & co. (10-29n), gated on
+-- organization.manage; reading the catalogs is open to any org member,
+-- same bar as tags (everyone needs to see the options to use them).
+create policy "members can read their orgs lead stages"
+on crm.lead_stages for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "members can read their orgs lead qualities"
+on crm.lead_qualities for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+create policy "members can read their orgs lead drop reasons"
+on crm.lead_drop_reasons for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
+-- Plain org-member read for now -- lead_scope ('own'/'team'/'all') filtering
+-- is explicitly deferred to whichever phase builds the pipeline UI
+-- (crm.preset_roles' own comment already says so for leads generally).
+create policy "members can read their orgs leads"
+on crm.leads for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

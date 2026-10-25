@@ -456,6 +456,86 @@ isOneToOne: false
       referencedColumns: ["organization_id","id"]
     }
                   ]
+                },"lead_drop_reasons": {
+                  Row: {
+                    "created_at": string,"id": string,"is_preset": boolean,"key": string,"name": string,"organization_id": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key": string,"name": string,"organization_id": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key"?: string,"name"?: string,"organization_id"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"lead_qualities": {
+                  Row: {
+                    "created_at": string,"id": string,"is_preset": boolean,"key": string,"name": string,"organization_id": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key": string,"name": string,"organization_id": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key"?: string,"name"?: string,"organization_id"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"lead_stages": {
+                  Row: {
+                    "created_at": string,"id": string,"is_preset": boolean,"key": string,"name": string,"organization_id": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key": string,"name": string,"organization_id": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_preset"?: boolean,"key"?: string,"name"?: string,"organization_id"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"leads": {
+                  Row: {
+                    "contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "leads_contact_fkey"
+      columns: ["organization_id","contact_id"]
+isOneToOne: true
+      referencedRelation: "contacts"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "leads_drop_reason_fkey"
+      columns: ["organization_id","drop_reason_id"]
+isOneToOne: false
+      referencedRelation: "lead_drop_reasons"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "leads_quality_fkey"
+      columns: ["organization_id","quality_id"]
+isOneToOne: false
+      referencedRelation: "lead_qualities"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "leads_stage_fkey"
+      columns: ["organization_id","stage_id"]
+isOneToOne: false
+      referencedRelation: "lead_stages"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"member_address_access": {
                   Row: {
                     "address": string,"agent_id": string,"created_at": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
@@ -636,6 +716,48 @@ isOneToOne: false
                   }
                   Update: {
                     "action"?: string,"actor_user_id"?: string,"created_at"?: string,"details"?: NonNullable<Json>,"id"?: never,"target_id"?: string | null,"target_type"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"preset_lead_drop_reasons": {
+                  Row: {
+                    "key": string,"name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "key"?: string,"name"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"preset_lead_qualities": {
+                  Row: {
+                    "key": string,"name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "key"?: string,"name"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"preset_lead_stages": {
+                  Row: {
+                    "key": string,"name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "key"?: string,"name"?: string,"sort_order"?: number
                   }
                   Relationships: [
                     
@@ -996,6 +1118,15 @@ isOneToOne: false
 "create_custom_field":
 { Args: { "p_entity": string,"p_key": string,"p_label": Json,"p_options"?: Json,"p_organization_id": string,"p_required"?: boolean,"p_type": string }; Returns: string
                            },
+"create_lead_drop_reason":
+{ Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
+"create_lead_quality":
+{ Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
+"create_lead_stage":
+{ Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
 "create_preset_roles":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -1026,6 +1157,15 @@ isOneToOne: false
 { Args: { "p_tier": Database["public"]['Enums']["role"] }; Returns: string
                            },
 "delete_canned_reply":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_lead_drop_reason":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_lead_quality":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_lead_stage":
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_tag":
@@ -1063,6 +1203,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"find_or_create_lead":
+{ Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
+                           },
 "format_custom_field":
 { Args: { "p_entity": string,"p_key": string,"p_locale"?: string,"p_organization_id": string,"p_value": Json }; Returns: string
                            },
@@ -1229,6 +1372,9 @@ isOneToOne: false
 "revoke_support_access":
 { Args: { "p_admin_id": string,"p_grant_id": string }; Returns: undefined
                            },
+"seed_lead_catalogs":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
                            },
@@ -1240,6 +1386,15 @@ isOneToOne: false
                            },
 "set_feature_kill_switch":
 { Args: { "p_enabled": boolean,"p_feature_key": string }; Returns: undefined
+                           },
+"set_lead_quality":
+{ Args: { "p_lead_id": string,"p_quality_id": string }; Returns: undefined
+                           },
+"set_lead_stage":
+{ Args: { "p_lead_id": string,"p_stage_id": string }; Returns: undefined
+                           },
+"set_lead_status":
+{ Args: { "p_drop_reason_id"?: string,"p_lead_id": string,"p_status": string }; Returns: undefined
                            },
 "set_member_address_access":
 { Args: { "p_address": string,"p_agent_id": string,"p_allowed": boolean,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
@@ -1297,6 +1452,15 @@ isOneToOne: false
                            },
 "update_custom_field":
 { Args: { "p_field_id": string,"p_label": Json,"p_options": Json,"p_required": boolean }; Returns: undefined
+                           },
+"update_lead_drop_reason":
+{ Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
+                           },
+"update_lead_quality":
+{ Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
+                           },
+"update_lead_stage":
+{ Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
                            },
 "upgrade_organization_pack":
 { Args: { "p_organization_id": string,"p_version"?: number }; Returns: number

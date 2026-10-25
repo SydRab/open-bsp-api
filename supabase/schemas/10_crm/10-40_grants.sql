@@ -87,6 +87,22 @@ grant execute on function crm.create_canned_reply(uuid, text, text) to authentic
 grant execute on function crm.update_canned_reply(uuid, text, text) to authenticated;
 grant execute on function crm.delete_canned_reply(uuid) to authenticated;
 
+-- Lead model (P3-02). seed_lead_catalogs: platform only (service_role, via
+-- the blanket grant above) -- called from the org-creation trigger.
+grant execute on function crm.create_lead_stage(uuid, text) to authenticated;
+grant execute on function crm.update_lead_stage(uuid, text, int) to authenticated;
+grant execute on function crm.delete_lead_stage(uuid) to authenticated;
+grant execute on function crm.create_lead_quality(uuid, text) to authenticated;
+grant execute on function crm.update_lead_quality(uuid, text, int) to authenticated;
+grant execute on function crm.delete_lead_quality(uuid) to authenticated;
+grant execute on function crm.create_lead_drop_reason(uuid, text) to authenticated;
+grant execute on function crm.update_lead_drop_reason(uuid, text, int) to authenticated;
+grant execute on function crm.delete_lead_drop_reason(uuid) to authenticated;
+grant execute on function crm.find_or_create_lead(uuid, uuid, text) to authenticated;
+grant execute on function crm.set_lead_stage(uuid, uuid) to authenticated;
+grant execute on function crm.set_lead_quality(uuid, uuid) to authenticated;
+grant execute on function crm.set_lead_status(uuid, text, uuid) to authenticated;
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
