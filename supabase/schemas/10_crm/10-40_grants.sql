@@ -112,6 +112,17 @@ grant execute on function crm.delete_qualification_question_score(uuid) to authe
 grant execute on function crm.set_score_threshold(uuid, int, uuid, text) to authenticated;
 grant execute on function crm.delete_score_threshold(uuid) to authenticated;
 
+-- Assignment engine (P3-05). The engine itself (crm.z_assign_on_qualified,
+-- crm.sweep_lead_reassignment and the internal functions they call) is
+-- trigger/system-only, no grant needed beyond the blanket service_role
+-- baseline above. Rule CRUD and manual assign/unassign are member-callable.
+grant execute on function crm.set_team_member_weight(uuid, uuid, int) to authenticated;
+grant execute on function crm.set_assignment_rule(uuid, uuid, text, text, text, int) to authenticated;
+grant execute on function crm.update_assignment_rule(uuid, uuid, text, text, text, int, boolean) to authenticated;
+grant execute on function crm.delete_assignment_rule(uuid) to authenticated;
+grant execute on function crm.assign_lead(uuid, uuid) to authenticated;
+grant execute on function crm.unassign_lead(uuid) to authenticated;
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;

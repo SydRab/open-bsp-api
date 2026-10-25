@@ -387,3 +387,14 @@ using (organization_id in (select public.get_authorized_orgs('member')));
 create policy "members can read their orgs qualification score thresholds"
 on crm.qualification_score_thresholds for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Assignment engine (P3-05) ------------------------------------------------------------
+
+alter table crm.assignment_rules enable row level security;
+
+-- Writes go through crm.set_assignment_rule & co., gated on
+-- organization.manage; reading the rules is open to any member, same bar
+-- as the other lead catalogs.
+create policy "members can read their orgs assignment rules"
+on crm.assignment_rules for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));

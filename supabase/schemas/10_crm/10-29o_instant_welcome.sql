@@ -14,6 +14,15 @@
 -- update_conversation_referral (alphabetical trigger order on the same
 -- event) -- crm.contacts.first_touch_referral must already be set on this
 -- exact message before this reads it to decide the lead's source.
+--
+-- [crm] P3-05 fix: reads the setting via crm.resolve_setting, not crm.
+-- get_setting. get_setting's permission check has an auth.role() =
+-- 'service_role' bypass that depends on a GUC only a PostgREST-routed
+-- request sets -- a plain INSERT with no such GUC (confirmed the hard
+-- way: `supabase db reset`'s own seed.sql inserts a message this way,
+-- and raised "authentication required" here) has none either, same as
+-- pg_cron's direct SQL execution (see crm._pick_assignee's header note,
+-- 10-29s). Any trigger reading a setting must use crm.resolve_setting.
 create function crm.z_welcome_and_create_lead() returns trigger
 language plpgsql
 security definer
@@ -57,7 +66,7 @@ begin
     and v_contact.welcome_sent_at is null
   then
     v_welcome_on := coalesce(
-      (crm.get_setting(new.organization_id, 'messaging.instant_welcome') #>> '{}')::boolean,
+      ((select r.value from crm.resolve_setting(new.organization_id, 'messaging.instant_welcome') r) #>> '{}')::boolean,
       false
     );
 

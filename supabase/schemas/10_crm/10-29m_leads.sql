@@ -121,6 +121,11 @@ create table crm.leads (
   -- completes; a manual quality/status override afterwards does not clear
   -- it -- it stays as a record of what the engine computed.
   score int,
+  -- [crm] P3-05: who currently owns this lead (crm._pick_assignee,
+  -- 10-29s). Null = unassigned, visible for manual pickup -- the engine
+  -- leaves it that way rather than guessing when a pool is exhausted.
+  assigned_to uuid,
+  assigned_at timestamp with time zone,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );
@@ -159,6 +164,11 @@ foreign key (organization_id, drop_reason_id)
 references crm.lead_drop_reasons(organization_id, id);
 
 alter table only crm.leads
+add constraint leads_assigned_to_fkey
+foreign key (organization_id, assigned_to)
+references public.agents(organization_id, id);
+
+alter table only crm.leads
 add constraint leads_source_check
 check (source in ('ctwa_ad', 'ctwa_post', 'organic', 'manual'));
 
@@ -177,6 +187,12 @@ on crm.leads (organization_id);
 
 create index leads_organization_id_status_idx
 on crm.leads (organization_id, status);
+
+-- [crm] P3-05: capacity-cap counts ("how many open leads does this agent
+-- already hold") and "my leads" views both filter on this.
+create index leads_assigned_to_idx
+on crm.leads (organization_id, assigned_to)
+where assigned_to is not null;
 
 create trigger set_updated_at
 before update

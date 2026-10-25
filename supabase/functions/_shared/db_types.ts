@@ -298,7 +298,27 @@ isOneToOne: false
           }
         },"crm": {
           Tables: {
-            "audit_log": {
+            "assignment_rules": {
+                  Row: {
+                    "created_at": string,"id": string,"is_active": boolean,"match_campaign_ref": string | null,"match_language": string | null,"match_source": string | null,"organization_id": string,"sort_order": number,"team_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"match_campaign_ref"?: string | null,"match_language"?: string | null,"match_source"?: string | null,"organization_id": string,"sort_order"?: number,"team_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"match_campaign_ref"?: string | null,"match_language"?: string | null,"match_source"?: string | null,"organization_id"?: string,"sort_order"?: number,"team_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assignment_rules_team_fkey"
+      columns: ["organization_id","team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"audit_log": {
                   Row: {
                     "action": string,"actor_agent_id": string | null,"actor_api_key_id": string | null,"actor_type": string,"actor_user_id": string | null,"created_at": string,"details": NonNullable<Json>,"id": number,"organization_id": string,"request_id": string | null,"target_id": string | null,"target_type": string | null
                   }
@@ -520,14 +540,14 @@ isOneToOne: true
                   ]
                 },"leads": {
                   Row: {
-                    "contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
+                    "assigned_at": string | null,"assigned_to": string | null,"contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1032,14 +1052,14 @@ isOneToOne: false
                   ]
                 },"team_members": {
                   Row: {
-                    "agent_id": string,"created_at": string,"organization_id": string,"team_id": string
+                    "agent_id": string,"created_at": string,"organization_id": string,"team_id": string,"weight": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "agent_id": string,"created_at"?: string,"organization_id": string,"team_id": string
+                    "agent_id": string,"created_at"?: string,"organization_id": string,"team_id": string,"weight"?: number
                   }
                   Update: {
-                    "agent_id"?: string,"created_at"?: string,"organization_id"?: string,"team_id"?: string
+                    "agent_id"?: string,"created_at"?: string,"organization_id"?: string,"team_id"?: string,"weight"?: number
                   }
                   Relationships: [
                     {
@@ -1132,8 +1152,14 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "_ensure_lead":
+            "_ensure_assignment":
+{ Args: { "p_lead_id": string,"p_organization_id": string }; Returns: undefined
+                           },
+"_ensure_lead":
 { Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
+                           },
+"_match_assignment_rule":
+{ Args: { "p_lead_id": string,"p_organization_id": string }; Returns: string
                            },
 "_next_qualification_question":
 { Args: { "p_contact_id": string,"p_organization_id": string }; Returns: {
@@ -1156,6 +1182,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"_pick_assignee":
+{ Args: { "p_organization_id": string,"p_team_id": string }; Returns: string
+                           },
 "_score_and_complete_qualification":
 { Args: { "p_contact_id": string,"p_lead_id": string,"p_organization_id": string }; Returns: undefined
                            },
@@ -1219,6 +1248,9 @@ isOneToOne: false
                            },
 "assign_conversation":
 { Args: { "p_agent_id": string,"p_conversation_id": string }; Returns: undefined
+                           },
+"assign_lead":
+{ Args: { "p_agent_id": string,"p_lead_id": string }; Returns: undefined
                            },
 "caller_agent":
 { Args: { "p_organization_id": string }; Returns: Database["public"]['Tables']["agents"]['Row']
@@ -1288,6 +1320,9 @@ isOneToOne: false
                            },
 "default_role_key":
 { Args: { "p_tier": Database["public"]['Enums']["role"] }; Returns: string
+                           },
+"delete_assignment_rule":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "delete_canned_reply":
 { Args: { "p_id": string }; Returns: undefined
@@ -1518,6 +1553,9 @@ isOneToOne: false
 "seed_qualification_scoring":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"set_assignment_rule":
+{ Args: { "p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_organization_id": string,"p_sort_order"?: number,"p_team_id": string }; Returns: string
+                           },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
                            },
@@ -1578,6 +1616,9 @@ isOneToOne: false
 "set_team_member":
 { Args: { "p_agent_id": string,"p_member": boolean,"p_team_id": string }; Returns: undefined
                            },
+"set_team_member_weight":
+{ Args: { "p_agent_id": string,"p_team_id": string,"p_weight": number }; Returns: undefined
+                           },
 "set_whatsapp_access_token":
 { Args: { "p_access_token": string,"p_address": string,"p_organization_id": string }; Returns: undefined
                            },
@@ -1586,6 +1627,9 @@ isOneToOne: false
                            },
 "suspend_organization":
 { Args: { "p_organization_id": string,"p_reason"?: string }; Returns: undefined
+                           },
+"sweep_lead_reassignment":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "sweep_qualification_nudges":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -1598,6 +1642,12 @@ isOneToOne: false
                            },
 "unassign_conversation":
 { Args: { "p_conversation_id": string }; Returns: undefined
+                           },
+"unassign_lead":
+{ Args: { "p_lead_id": string }; Returns: undefined
+                           },
+"update_assignment_rule":
+{ Args: { "p_id": string,"p_is_active": boolean,"p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_sort_order": number,"p_team_id": string }; Returns: undefined
                            },
 "update_canned_reply":
 { Args: { "p_content": string,"p_id": string,"p_name": string }; Returns: undefined

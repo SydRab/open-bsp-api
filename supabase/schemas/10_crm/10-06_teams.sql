@@ -32,8 +32,15 @@ create table crm.team_members (
   team_id uuid not null,
   organization_id uuid not null,
   agent_id uuid not null,
+  -- [crm] P3-05: relative share of round-robin assignment within this team
+  -- (crm._pick_assignee, 10-29s) -- a weight of 2 gets roughly twice as
+  -- many leads as a weight of 1. 1 for everyone is a plain round robin.
+  weight int not null default 1,
   created_at timestamp with time zone default now() not null
 );
+
+alter table only crm.team_members
+add constraint team_members_weight_check check (weight > 0);
 
 alter table only crm.team_members
 add constraint team_members_pkey primary key (team_id, agent_id);
