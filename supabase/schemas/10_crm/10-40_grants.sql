@@ -123,6 +123,14 @@ grant execute on function crm.delete_assignment_rule(uuid) to authenticated;
 grant execute on function crm.assign_lead(uuid, uuid) to authenticated;
 grant execute on function crm.unassign_lead(uuid) to authenticated;
 
+-- Speed-to-lead (P3-06). The engine itself (crm.z_set_response_deadline,
+-- crm.z_record_first_response, crm.sweep_speed_to_lead_escalation and the
+-- internal functions they call) is trigger/system-only, no grant needed
+-- beyond the blanket service_role baseline above. Only marking a
+-- notification read is member-callable.
+grant execute on function crm.mark_notification_read(uuid) to authenticated;
+grant execute on function crm.mark_all_notifications_read(uuid) to authenticated;
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;

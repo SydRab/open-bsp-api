@@ -126,6 +126,17 @@ create table crm.leads (
   -- leaves it that way rather than guessing when a pool is exhausted.
   assigned_to uuid,
   assigned_at timestamp with time zone,
+  -- [crm] P3-06: the first-response SLA clock (crm.z_set_response_deadline,
+  -- 10-29u) -- set from assigned_at + speed_to_lead.first_response_sla_
+  -- minutes whenever assigned_to changes and nobody has responded yet.
+  -- Null until a lead has an assignee: there's nobody to escalate from
+  -- before that.
+  first_response_due_at timestamp with time zone,
+  -- Set once by crm.z_record_first_response (10-29u) on the first human-
+  -- sent (not the welcome/qualification engine's own automated) message
+  -- in this lead's conversation after assignment. Immutable afterwards --
+  -- this is about the FIRST response only, not an ongoing SLA.
+  first_responded_at timestamp with time zone,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

@@ -540,14 +540,14 @@ isOneToOne: true
                   ]
                 },"leads": {
                   Row: {
-                    "assigned_at": string | null,"assigned_to": string | null,"contact_id": string,"created_at": string,"drop_reason_id": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
+                    "assigned_at": string | null,"assigned_to": string | null,"contact_id": string,"created_at": string,"drop_reason_id": string | null,"first_responded_at": string | null,"first_response_due_at": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id": string,"created_at"?: string,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id"?: string,"created_at"?: string,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -628,6 +628,26 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "roles"
       referencedColumns: ["organization_id","id"]
+    }
+                  ]
+                },"notifications": {
+                  Row: {
+                    "agent_id": string,"body": string | null,"created_at": string,"id": string,"kind": string,"lead_id": string | null,"organization_id": string,"read_at": string | null,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id": string,"body"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"lead_id"?: string | null,"organization_id": string,"read_at"?: string | null,"title": string
+                  }
+                  Update: {
+                    "agent_id"?: string,"body"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"lead_id"?: string | null,"organization_id"?: string,"read_at"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notifications_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: false
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
     }
                   ]
                 },"organization_features": {
@@ -1152,11 +1172,17 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "_ensure_assignment":
+            "_create_notification":
+{ Args: { "p_agent_id": string,"p_body": string,"p_kind": string,"p_lead_id"?: string,"p_organization_id": string,"p_title": string }; Returns: undefined
+                           },
+"_ensure_assignment":
 { Args: { "p_lead_id": string,"p_organization_id": string }; Returns: undefined
                            },
 "_ensure_lead":
 { Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
+                           },
+"_lead_escalation_managers":
+{ Args: { "p_agent_id": string,"p_organization_id": string }; Returns: string[]
                            },
 "_match_assignment_rule":
 { Args: { "p_lead_id": string,"p_organization_id": string }; Returns: string
@@ -1475,6 +1501,12 @@ isOneToOne: false
               "created_at": string,"latest_pack_version": number,"name": string,"organization_id": string,"pack_key": string,"pack_version": number,"seats_cap": number,"seats_used": number,"slug": string,"status": string,"tier_id": string,"tier_name": string
             }[]
                            },
+"mark_all_notifications_read":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"mark_notification_read":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "my_permissions":
 { Args: { "p_organization_id": string }; Returns: string[]
                            },
@@ -1632,6 +1664,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "sweep_qualification_nudges":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"sweep_speed_to_lead_escalation":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "tier_rank":

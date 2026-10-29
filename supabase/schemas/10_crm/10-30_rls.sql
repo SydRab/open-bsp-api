@@ -398,3 +398,21 @@ alter table crm.assignment_rules enable row level security;
 create policy "members can read their orgs assignment rules"
 on crm.assignment_rules for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Speed-to-lead (P3-06) -----------------------------------------------------------------
+
+alter table crm.notifications enable row level security;
+
+-- Writes are entirely system-driven (crm._create_notification, called
+-- from crm.sweep_speed_to_lead_escalation) -- a member only ever reads
+-- their OWN notifications (not every member's, unlike the lead catalogs
+-- above), and marks them read via crm.mark_notification_read & co.
+create policy "members can read their own notifications"
+on crm.notifications for select to authenticated
+using (
+  organization_id in (select public.get_authorized_orgs('member'))
+  and exists (
+    select 1 from public.agents a
+    where a.id = agent_id and a.user_id = auth.uid() and a.deleted_at is null
+  )
+);

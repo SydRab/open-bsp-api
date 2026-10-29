@@ -29,8 +29,8 @@ values ('test.layered', 'test', 'Layered', '{"type": "integer", "minimum": 1, "m
 
 select is(
   (select count(*)::int from crm.setting_definitions where key not like 'test.%'),
-  30,
-  'the first catalog has 30 settings (incl. assignment engine, P3-05)'
+  33,
+  'the first catalog has 33 settings (incl. speed-to-lead, P3-06)'
 );
 select is(
   (select count(*)::int from crm.setting_definitions

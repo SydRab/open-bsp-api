@@ -143,7 +143,7 @@ select results_eq(
     ('crm.contacts'), ('crm.contacts_consent'), ('crm.conversation_assignments'), ('crm.conversation_tags'), ('crm.disclaimer_versions'), ('crm.invitation_roles'),
     ('crm.lead_drop_reasons'), ('crm.lead_qualification_state'), ('crm.lead_qualities'), ('crm.lead_stages'), ('crm.leads'),
     ('crm.member_address_access'), ('crm.member_permission_overrides'),
-    ('crm.member_roles'), ('crm.organization_features'),
+    ('crm.member_roles'), ('crm.notifications'), ('crm.organization_features'),
     ('crm.organization_pack_items'), ('crm.organization_packs'),
     ('crm.organization_profiles'),
     ('crm.qualification_question_scores'), ('crm.qualification_score_thresholds'),
