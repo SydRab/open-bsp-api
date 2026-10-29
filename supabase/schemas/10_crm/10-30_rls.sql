@@ -356,6 +356,15 @@ create policy "members can read their orgs lead drop reasons"
 on crm.lead_drop_reasons for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
+-- [crm] P3-07b: writes go through crm.set_stage_required_fields (10-29n),
+-- gated on organization.manage; reading is open to any org member, same
+-- bar as the other lead catalogs above.
+alter table crm.lead_stage_required_fields enable row level security;
+
+create policy "members can read their orgs stage required fields"
+on crm.lead_stage_required_fields for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
 -- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
 -- 10-10) enforced here -- this is the "pipeline UI" phase the deferral

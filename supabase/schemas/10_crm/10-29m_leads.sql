@@ -49,6 +49,44 @@ alter table only crm.lead_stages
 add constraint lead_stages_name_check
 check (length(trim(name)) between 1 and 60);
 
+-- [crm] P3-07b: which deal-entity custom fields (crm.organization_pack_items,
+-- 10-17) must be filled in before a lead can move INTO this stage. Enforced
+-- in crm.set_lead_stage (10-29n), the same "a transition requires a value
+-- first" pattern crm.set_lead_status already uses for drop_reason_id.
+create table crm.lead_stage_required_fields (
+  id uuid default gen_random_uuid() not null,
+  organization_id uuid not null,
+  stage_id uuid not null,
+  field_id uuid not null,
+  created_at timestamp with time zone default now() not null
+);
+
+alter table only crm.lead_stage_required_fields
+add constraint lead_stage_required_fields_pkey primary key (id);
+
+alter table only crm.lead_stage_required_fields
+add constraint lead_stage_required_fields_organization_id_fkey
+foreign key (organization_id) references public.organizations(id) on delete cascade;
+
+alter table only crm.lead_stage_required_fields
+add constraint lead_stage_required_fields_stage_fkey
+foreign key (organization_id, stage_id)
+references crm.lead_stages(organization_id, id) on delete cascade;
+
+-- Plain (not composite) -- crm.organization_pack_items has no unique
+-- (organization_id, id), same limitation already hit for crm.leads'
+-- own FKs into catalog tables.
+alter table only crm.lead_stage_required_fields
+add constraint lead_stage_required_fields_field_fkey
+foreign key (field_id) references crm.organization_pack_items(id) on delete cascade;
+
+alter table only crm.lead_stage_required_fields
+add constraint lead_stage_required_fields_stage_id_field_id_key
+unique (stage_id, field_id);
+
+create index lead_stage_required_fields_stage_id_idx
+on crm.lead_stage_required_fields (stage_id);
+
 create table crm.lead_qualities (
   id uuid default gen_random_uuid() not null,
   organization_id uuid not null,
@@ -142,6 +180,12 @@ create table crm.leads (
   -- this project has no multi-currency/payments concept yet (that's Phase
   -- 6). Null means "not estimated yet," not zero.
   deal_value numeric,
+  -- [crm] P3-07b: deal-entity custom field values (crm.organization_pack_items,
+  -- 10-17), set via crm.set_lead_fields (10-17_custom_fields.sql) -- the
+  -- same column crm.contacts already has, one entity later than that
+  -- file's own comment said it would arrive ("deals get the same column
+  -- in Phase 3").
+  custom_fields jsonb default '{}'::jsonb not null,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

@@ -524,6 +524,32 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"lead_stage_required_fields": {
+                  Row: {
+                    "created_at": string,"field_id": string,"id": string,"organization_id": string,"stage_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"field_id": string,"id"?: string,"organization_id": string,"stage_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"field_id"?: string,"id"?: string,"organization_id"?: string,"stage_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lead_stage_required_fields_field_fkey"
+      columns: ["field_id"]
+isOneToOne: false
+      referencedRelation: "organization_pack_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lead_stage_required_fields_stage_fkey"
+      columns: ["organization_id","stage_id"]
+isOneToOne: false
+      referencedRelation: "lead_stages"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"lead_stages": {
                   Row: {
                     "created_at": string,"id": string,"is_preset": boolean,"key": string,"name": string,"organization_id": string,"sort_order": number,"updated_at": string
@@ -540,14 +566,14 @@ isOneToOne: true
                   ]
                 },"leads": {
                   Row: {
-                    "assigned_at": string | null,"assigned_to": string | null,"contact_id": string,"created_at": string,"deal_value": number | null,"drop_reason_id": string | null,"first_responded_at": string | null,"first_response_due_at": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
+                    "assigned_at": string | null,"assigned_to": string | null,"contact_id": string,"created_at": string,"custom_fields": NonNullable<Json>,"deal_value": number | null,"drop_reason_id": string | null,"first_responded_at": string | null,"first_response_due_at": string | null,"id": string,"organization_id": string,"quality_id": string | null,"score": number | null,"source": string,"stage_id": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id": string,"created_at"?: string,"deal_value"?: number | null,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id": string,"created_at"?: string,"custom_fields"?: NonNullable<Json>,"deal_value"?: number | null,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id": string,"quality_id"?: string | null,"score"?: number | null,"source": string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id"?: string,"created_at"?: string,"deal_value"?: number | null,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
+                    "assigned_at"?: string | null,"assigned_to"?: string | null,"contact_id"?: string,"created_at"?: string,"custom_fields"?: NonNullable<Json>,"deal_value"?: number | null,"drop_reason_id"?: string | null,"first_responded_at"?: string | null,"first_response_due_at"?: string | null,"id"?: string,"organization_id"?: string,"quality_id"?: string | null,"score"?: number | null,"source"?: string,"stage_id"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1220,6 +1246,9 @@ isOneToOne: false
 "_send_qualification_question":
 { Args: { "p_contact_id": string,"p_conversation_address": string,"p_conversation_id": string,"p_is_nudge"?: boolean,"p_organization_address": string,"p_organization_id": string,"p_question": Omit<Database["crm"]['Tables']["organization_pack_items"]['Row'], Database["crm"]['Tables']["organization_pack_items"]['ComputedFields']>,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
                            },
+"_set_lead_stage":
+{ Args: { "p_lead_id": string,"p_organization_id": string,"p_stage_id": string }; Returns: undefined
+                           },
 "admin_get_audit_log":
 { Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
               "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_name": string,"target_type": string
@@ -1277,6 +1306,9 @@ isOneToOne: false
                            },
 "assign_lead":
 { Args: { "p_agent_id": string,"p_lead_id": string }; Returns: undefined
+                           },
+"bulk_set_lead_stage":
+{ Args: { "p_lead_ids": (string)[],"p_stage_id": string }; Returns: undefined
                            },
 "caller_agent":
 { Args: { "p_organization_id": string }; Returns: Database["public"]['Tables']["agents"]['Row']
@@ -1606,6 +1638,9 @@ isOneToOne: false
 "set_lead_deal_value":
 { Args: { "p_lead_id": string,"p_value": number }; Returns: undefined
                            },
+"set_lead_fields":
+{ Args: { "p_lead_id": string,"p_values": Json }; Returns: Json
+                           },
 "set_lead_quality":
 { Args: { "p_lead_id": string,"p_quality_id": string }; Returns: undefined
                            },
@@ -1647,6 +1682,9 @@ isOneToOne: false
                            },
 "set_setting":
 { Args: { "p_key": string,"p_organization_id": string,"p_scope"?: string,"p_target"?: string,"p_value": Json }; Returns: undefined
+                           },
+"set_stage_required_fields":
+{ Args: { "p_field_ids": (string)[],"p_stage_id": string }; Returns: undefined
                            },
 "set_tag_color":
 { Args: { "p_color": string,"p_tag_id": string }; Returns: undefined
