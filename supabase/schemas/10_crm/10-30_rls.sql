@@ -357,12 +357,34 @@ on crm.lead_drop_reasons for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
--- Plain org-member read for now -- lead_scope ('own'/'team'/'all') filtering
--- is explicitly deferred to whichever phase builds the pipeline UI
--- (crm.preset_roles' own comment already says so for leads generally).
-create policy "members can read their orgs leads"
+-- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
+-- 10-10) enforced here -- this is the "pipeline UI" phase the deferral
+-- comment above used to point to. 'own' sees only leads assigned to the
+-- caller; 'team' sees leads assigned to anyone on the caller's own
+-- team(s), but never an unassigned lead -- manually picking one up is a
+-- manager/admin action, and those roles already default to lead_scope=
+-- 'all'; 'all' sees every lead in the org, assigned or not.
+create policy "members can read leads within their lead_scope"
 on crm.leads for select to authenticated, anon
-using (organization_id in (select public.get_authorized_orgs('member')));
+using (
+  crm.leads.organization_id in (select public.get_authorized_orgs('member'))
+  and (
+    crm.resolve_lead_scope(crm.leads.organization_id) = 'all'
+    or (
+      crm.resolve_lead_scope(crm.leads.organization_id) = 'team'
+      and crm.leads.assigned_to in (
+        select tm2.agent_id
+        from crm.team_members tm1
+        join crm.team_members tm2 on tm2.team_id = tm1.team_id
+        where tm1.agent_id = (crm.caller_agent(crm.leads.organization_id)).id
+      )
+    )
+    or (
+      crm.resolve_lead_scope(crm.leads.organization_id) = 'own'
+      and crm.leads.assigned_to = (crm.caller_agent(crm.leads.organization_id)).id
+    )
+  )
+);
 
 -- Qualification engine (P3-04) --------------------------------------------------------
 

@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(24);
+select plan(34);
 
 select tests.create_user('owner@test.local') as owner_user \gset
 select tests.create_user('other.owner@test.local') as other_user \gset
@@ -136,6 +136,20 @@ select throws_ok(
   '22023', 'stage not found', 'a nonexistent stage id is rejected'
 );
 
+-- set_lead_deal_value (P3-07) --------------------------------------------------------------
+
+select crm.set_lead_deal_value(:'lead_asha', 15000);
+select is(
+  (select deal_value from crm.leads where id = :'lead_asha'),
+  15000::numeric,
+  'set_lead_deal_value sets it'
+);
+
+select throws_ok(
+  format($$ select crm.set_lead_deal_value(%L, -1) $$, :'lead_asha'),
+  '22023', 'deal value cannot be negative', 'a negative deal value is rejected'
+);
+
 -- status rules: dropped requires a reason; converted is terminal ---------------------------
 
 select throws_ok(
@@ -155,6 +169,10 @@ select tests.as_user('viewer@test.local');
 select throws_ok(
   format($$ select crm.set_lead_quality(%L, %L) $$, :'lead_asha', :'quality_high'),
   '42501', null, 'a viewer (no deals.edit) cannot work a lead'
+);
+select throws_ok(
+  format($$ select crm.set_lead_deal_value(%L, 1) $$, :'lead_asha'),
+  '42501', null, 'a viewer (no deals.edit) cannot set the deal value either'
 );
 
 -- Table-level invariant: status='dropped' requires drop_reason_id, enforced
@@ -191,6 +209,75 @@ select isnt_empty(
 select isnt_empty(
   format($$ select 1 from crm.audit_log where organization_id = %L and action = 'lead.status_changed' $$, :'org'),
   'an explicit status change is audit-logged'
+);
+select isnt_empty(
+  format($$ select 1 from crm.audit_log where organization_id = %L and action = 'lead.deal_value_changed' $$, :'org'),
+  'a deal value change is audit-logged'
+);
+
+-- lead_scope RLS (P3-07a) --------------------------------------------------------------------
+
+select tests.as_postgres();
+insert into public.contacts_addresses (organization_id, organization_address, service, address, extra)
+values (:'org', 'phone-1', 'whatsapp', '919000000041', '{"name": "Bina"}');
+select contact_id as bina from crm.contact_addresses
+where organization_id = :'org' and address = '919000000041' \gset
+
+select tests.as_postgres();
+select tests.create_user('rep.b@test.local') as rep_b_user \gset
+select tests.as_user('owner@test.local');
+select tests.add_member(:'org', 'rep.b@test.local', 'sales_rep') as rep_b_agent \gset
+select tests.as_user('owner@test.local');
+select crm.find_or_create_lead(:'org', :'bina', 'organic') as lead_bina \gset
+select crm.assign_lead(:'lead_asha', :'rep_agent');
+select crm.assign_lead(:'lead_bina', :'rep_b_agent');
+
+select tests.as_postgres();
+insert into public.contacts_addresses (organization_id, organization_address, service, address, extra)
+values (:'org', 'phone-1', 'whatsapp', '919000000042', '{"name": "Chetan"}');
+select contact_id as chetan from crm.contact_addresses
+where organization_id = :'org' and address = '919000000042' \gset
+select tests.as_user('owner@test.local');
+select crm.find_or_create_lead(:'org', :'chetan', 'organic') as lead_unassigned \gset
+
+-- sales_rep presets to lead_scope='own' -- sees only the lead assigned to them.
+select tests.as_user('rep@test.local');
+select isnt_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_asha'),
+  'own scope: a rep sees a lead assigned to them'
+);
+select is_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_bina'),
+  'own scope: a rep does not see a lead assigned to someone else'
+);
+select is_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_unassigned'),
+  'own scope: a rep does not see an unassigned lead'
+);
+
+-- Override to 'team' and put both reps on the same team -- now sees the
+-- teammate's lead, but still never the unassigned one.
+select tests.as_user('owner@test.local');
+select crm.set_member_lead_scope(:'rep_agent', 'team');
+select crm.create_team(:'org', 'Shared Team') as shared_team \gset
+select crm.set_team_member(:'shared_team', :'rep_agent', true);
+select crm.set_team_member(:'shared_team', :'rep_b_agent', true);
+
+select tests.as_user('rep@test.local');
+select isnt_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_bina'),
+  'team scope: a rep now sees a teammate''s assigned lead'
+);
+select is_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_unassigned'),
+  'team scope: still never an unassigned lead -- that''s a manager/admin''s job'
+);
+
+-- viewer presets to lead_scope='all' -- sees everything, including unassigned.
+select tests.as_user('viewer@test.local');
+select isnt_empty(
+  format($$ select 1 from crm.leads where id = %L $$, :'lead_unassigned'),
+  'all scope: sees an unassigned lead too'
 );
 
 -- Cross-org isolation on leads themselves ---------------------------------------------------

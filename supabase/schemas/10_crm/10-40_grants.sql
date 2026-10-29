@@ -28,6 +28,13 @@ grant execute on function crm.get_hidden_addresses() to anon, authenticated;
 grant execute on function crm.tier_rank(public.role) to anon, authenticated;
 grant execute on function crm.my_permissions(uuid) to authenticated;
 grant execute on function crm.get_my_organization_statuses() to authenticated;
+-- [crm] P3-07a: crm.leads' own lead_scope RLS policy (10-30) calls both of
+-- these directly, not from inside another SECURITY DEFINER function --
+-- RLS evaluates `using` as the querying role itself, so the role actually
+-- running the query needs its own EXECUTE grant on anything the policy
+-- calls, same reasoning as get_permitted_orgs/has_permission above.
+grant execute on function crm.resolve_lead_scope(uuid) to anon, authenticated;
+grant execute on function crm.caller_agent(uuid) to anon, authenticated;
 
 -- Member actions. Each checks its own permission.
 grant execute on function crm.request_organization_deletion(uuid) to authenticated;
@@ -101,6 +108,7 @@ grant execute on function crm.delete_lead_drop_reason(uuid) to authenticated;
 grant execute on function crm.find_or_create_lead(uuid, uuid, text) to authenticated;
 grant execute on function crm.set_lead_stage(uuid, uuid) to authenticated;
 grant execute on function crm.set_lead_quality(uuid, uuid) to authenticated;
+grant execute on function crm.set_lead_deal_value(uuid, numeric) to authenticated;
 grant execute on function crm.set_lead_status(uuid, text, uuid) to authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_

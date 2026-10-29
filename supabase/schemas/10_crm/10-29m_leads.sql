@@ -137,6 +137,11 @@ create table crm.leads (
   -- in this lead's conversation after assignment. Immutable afterwards --
   -- this is about the FIRST response only, not an ongoing SLA.
   first_responded_at timestamp with time zone,
+  -- [crm] P3-07: the pipeline board's deal value, set via crm.
+  -- set_lead_deal_value (10-29n). Single-currency (no currency column) --
+  -- this project has no multi-currency/payments concept yet (that's Phase
+  -- 6). Null means "not estimated yet," not zero.
+  deal_value numeric,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

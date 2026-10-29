@@ -162,6 +162,24 @@ as $$
     and a.deleted_at is null;
 $$;
 
+-- [crm] P3-07a: the caller's resolved lead_scope ('own'/'team'/'all') in an
+-- organization -- a member override (crm.set_member_lead_scope) if one is
+-- set, else the role's own default. Closes the gap crm.preset_roles' own
+-- comment flagged ("lead scope is stored, enforced by the pipeline
+-- phase") -- consumed by crm.leads' own RLS policy (10-30).
+create function crm.resolve_lead_scope(p_organization_id uuid) returns text
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select coalesce(mr.lead_scope, r.lead_scope)
+  from crm.member_roles mr
+  join crm.roles r on r.id = mr.role_id
+  where mr.organization_id = p_organization_id
+    and mr.agent_id = (crm.caller_agent(p_organization_id)).id;
+$$;
+
 create function crm.require_permission(
   p_organization_id uuid,
   p_permission text
