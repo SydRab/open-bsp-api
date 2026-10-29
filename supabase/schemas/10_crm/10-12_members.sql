@@ -262,6 +262,35 @@ begin
 end;
 $$;
 
+-- [crm] P3-07d: self-service only -- no permission check beyond "you are
+-- an active member," since this is the member's own contact info, not
+-- something an admin manages on their behalf (that's a deliberate v1
+-- scope cut, not an oversight). Digits-only with country code, matching
+-- how every other address is stored (crm.contact_addresses, etc.).
+create function crm.set_my_whatsapp_address(p_organization_id uuid, p_address text)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_self uuid := (crm.caller_agent(p_organization_id)).id;
+begin
+  if v_self is null then
+    raise exception 'not a member of this organization' using errcode = '42501';
+  end if;
+
+  if p_address is not null and p_address !~ '^[0-9]{10,15}$' then
+    raise exception 'enter the WhatsApp number as digits only, with country code'
+      using errcode = '22023';
+  end if;
+
+  update crm.member_roles
+  set whatsapp_address = p_address, updated_at = now()
+  where agent_id = v_self;
+end;
+$$;
+
 -- Per-member permission exception. p_granted null removes the override.
 create function crm.set_member_permission_override(
   p_agent_id uuid,

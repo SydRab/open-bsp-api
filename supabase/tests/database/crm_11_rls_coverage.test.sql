@@ -150,7 +150,7 @@ select results_eq(
     ('crm.qualification_question_scores'), ('crm.qualification_score_thresholds'),
     ('crm.role_permissions'), ('crm.roles'),
     ('crm.send_rate_buckets'), ('crm.setting_values'), ('crm.support_access_grants'),
-    ('crm.tags'), ('crm.team_members'), ('crm.teams'), ('crm.templates'), ('public.agents'),
+    ('crm.tags'), ('crm.tasks'), ('crm.team_members'), ('crm.teams'), ('crm.templates'), ('public.agents'),
     ('public.api_keys'), ('public.contacts_addresses'),
     ('public.conversations'), ('public.conversations_agents'),
     ('public.invitations'), ('public.logs'), ('public.messages'),

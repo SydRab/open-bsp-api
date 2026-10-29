@@ -18,7 +18,12 @@ select results_eq(
   'the pipeline stages are Lead Inquiring → Trial Booked → Paid Student, plus Lost'
 );
 select is(
-  (select count(*)::int from crm.organization_pack_items where organization_id = :'org' and kind = 'message_template'),
+  -- pack_value is not null: the vertical pack's own templates specifically,
+  -- not crm.seed_task_reminder_template's platform-level one (P3-07d),
+  -- which is deliberately pack_value = null ("the org's own," same as a
+  -- manually created template).
+  (select count(*)::int from crm.organization_pack_items
+   where organization_id = :'org' and kind = 'message_template' and pack_value is not null),
   8,
   'the template library is applied'
 );
@@ -39,7 +44,13 @@ select is(
   'the terminology map is applied'
 );
 select is(
-  (select count(*)::int from crm.organization_pack_items where organization_id = :'org' and is_customized),
+  -- pack_version > 0: the vertical pack's own items. P3-07d's platform-
+  -- seeded template uses pack_version = 0 and pack_value = null by design
+  -- (it's not pack-sourced), which the is_customized trigger (10-20_
+  -- triggers.sql, "value is distinct from pack_value") correctly reads as
+  -- customized -- same as any manually created custom field would.
+  (select count(*)::int from crm.organization_pack_items
+   where organization_id = :'org' and is_customized and pack_version > 0),
   0,
   'nothing is customized at first'
 );

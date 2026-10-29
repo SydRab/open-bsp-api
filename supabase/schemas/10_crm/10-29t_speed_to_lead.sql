@@ -45,7 +45,11 @@ foreign key (lead_id) references crm.leads(id) on delete cascade;
 
 alter table only crm.notifications
 add constraint notifications_kind_check
-check (kind in ('lead_sla_breached', 'lead_escalated_to_manager', 'lead_auto_reassigned'));
+check (kind in (
+  'lead_sla_breached', 'lead_escalated_to_manager', 'lead_auto_reassigned',
+  -- [crm] P3-07d
+  'task_due'
+));
 
 -- The bell icon's own query: this agent's unread notifications, newest
 -- first.

@@ -116,6 +116,15 @@ grant execute on function crm.set_stage_required_fields(uuid, uuid[]) to authent
 grant execute on function crm.bulk_set_lead_stage(uuid[], uuid) to authenticated;
 -- [crm] P3-07c.
 grant execute on function crm.get_lead_history(uuid) to authenticated;
+-- [crm] P3-07d.
+grant execute on function crm.create_task(uuid, text, timestamp with time zone, uuid) to authenticated;
+grant execute on function crm.update_task(uuid, text, timestamp with time zone, uuid) to authenticated;
+grant execute on function crm.complete_task(uuid, boolean) to authenticated;
+grant execute on function crm.delete_task(uuid) to authenticated;
+grant execute on function crm.set_my_whatsapp_address(uuid, text) to authenticated;
+-- Called directly from crm.tasks' own RLS policy (10-30) -- same reasoning
+-- as crm.resolve_lead_scope/caller_agent (P3-07a).
+grant execute on function crm._lead_visible_to_caller(uuid) to anon, authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
 -- engine and the internal functions it calls) is trigger/system-only, no

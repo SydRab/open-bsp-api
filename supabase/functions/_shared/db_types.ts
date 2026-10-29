@@ -638,14 +638,14 @@ isOneToOne: false
                   ]
                 },"member_roles": {
                   Row: {
-                    "agent_id": string,"created_at": string,"lead_scope": string | null,"organization_id": string,"role_id": string,"updated_at": string
+                    "agent_id": string,"created_at": string,"lead_scope": string | null,"organization_id": string,"role_id": string,"updated_at": string,"whatsapp_address": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "agent_id": string,"created_at"?: string,"lead_scope"?: string | null,"organization_id": string,"role_id": string,"updated_at"?: string
+                    "agent_id": string,"created_at"?: string,"lead_scope"?: string | null,"organization_id": string,"role_id": string,"updated_at"?: string,"whatsapp_address"?: string | null
                   }
                   Update: {
-                    "agent_id"?: string,"created_at"?: string,"lead_scope"?: string | null,"organization_id"?: string,"role_id"?: string,"updated_at"?: string
+                    "agent_id"?: string,"created_at"?: string,"lead_scope"?: string | null,"organization_id"?: string,"role_id"?: string,"updated_at"?: string,"whatsapp_address"?: string | null
                   }
                   Relationships: [
                     {
@@ -1096,6 +1096,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"tasks": {
+                  Row: {
+                    "assigned_to": string | null,"completed_at": string | null,"created_at": string,"due_at": string,"id": string,"lead_id": string,"organization_id": string,"reminder_sent_at": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assigned_to"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at": string,"id"?: string,"lead_id": string,"organization_id": string,"reminder_sent_at"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "assigned_to"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string,"id"?: string,"lead_id"?: string,"organization_id"?: string,"reminder_sent_at"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tasks_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: false
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"team_members": {
                   Row: {
                     "agent_id": string,"created_at": string,"organization_id": string,"team_id": string,"weight": number
@@ -1209,6 +1229,9 @@ isOneToOne: false
                            },
 "_lead_escalation_managers":
 { Args: { "p_agent_id": string,"p_organization_id": string }; Returns: string[]
+                           },
+"_lead_visible_to_caller":
+{ Args: { "p_lead_id": string }; Returns: boolean
                            },
 "_match_assignment_rule":
 { Args: { "p_lead_id": string,"p_organization_id": string }; Returns: string
@@ -1332,6 +1355,9 @@ isOneToOne: false
 "clear_organization_feature":
 { Args: { "p_feature_key": string,"p_organization_id": string }; Returns: undefined
                            },
+"complete_task":
+{ Args: { "p_completed"?: boolean,"p_id": string }; Returns: undefined
+                           },
 "count_recent_marketing_sends":
 { Args: { "p_conversation_address": string,"p_organization_address": string,"p_organization_id": string,"p_period_days": number }; Returns: number
                            },
@@ -1355,6 +1381,9 @@ isOneToOne: false
                            },
 "create_tag":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
+                           },
+"create_task":
+{ Args: { "p_assigned_to"?: string,"p_due_at": string,"p_lead_id": string,"p_title": string }; Returns: string
                            },
 "create_team":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
@@ -1402,6 +1431,9 @@ isOneToOne: false
                            },
 "delete_tag":
 { Args: { "p_tag_id": string }; Returns: undefined
+                           },
+"delete_task":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "delete_team":
 { Args: { "p_team_id": string }; Returns: undefined
@@ -1625,6 +1657,9 @@ isOneToOne: false
 "seed_qualification_scoring":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"seed_task_reminder_template":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
 "set_assignment_rule":
 { Args: { "p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_organization_id": string,"p_sort_order"?: number,"p_team_id": string }; Returns: string
                            },
@@ -1666,6 +1701,9 @@ isOneToOne: false
                            },
 "set_member_role":
 { Args: { "p_agent_id": string,"p_role_key": string }; Returns: undefined
+                           },
+"set_my_whatsapp_address":
+{ Args: { "p_address": string,"p_organization_id": string }; Returns: undefined
                            },
 "set_organization_feature":
 { Args: { "p_enabled": boolean,"p_expires_at"?: string,"p_feature_key": string,"p_organization_id": string,"p_reason"?: string }; Returns: undefined
@@ -1718,6 +1756,9 @@ isOneToOne: false
 "sweep_speed_to_lead_escalation":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"sweep_task_reminders":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "tier_rank":
 { Args: { "tier": Database["public"]['Enums']["role"] }; Returns: number
                            },
@@ -1747,6 +1788,9 @@ isOneToOne: false
                            },
 "update_lead_stage":
 { Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
+                           },
+"update_task":
+{ Args: { "p_assigned_to": string,"p_due_at": string,"p_id": string,"p_title": string }; Returns: undefined
                            },
 "upgrade_organization_pack":
 { Args: { "p_organization_id": string,"p_version"?: number }; Returns: number

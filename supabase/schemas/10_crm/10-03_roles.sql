@@ -71,6 +71,12 @@ create table crm.member_roles (
   role_id uuid not null,
   -- Overrides the role's lead_scope for this member; null = role default.
   lead_scope text,
+  -- [crm] P3-07d: where WhatsApp-delivered internal alerts (task reminders,
+  -- and eventually P3-06's speed-to-lead ones) reach this member -- their
+  -- own phone, set self-service (crm.set_my_whatsapp_address). Null means
+  -- "not set yet," falling back to in-app-only, same graceful degradation
+  -- as a missing/unapproved alert template.
+  whatsapp_address text,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

@@ -23,6 +23,8 @@ begin
   -- [crm] P3-04: after seed_lead_catalogs, so crm.lead_qualities already
   -- has rows for seed_qualification_scoring to resolve quality_key against.
   perform crm.seed_qualification_scoring(new.id);
+  -- [crm] P3-07d
+  perform crm.seed_task_reminder_template(new.id);
 
   return null;
 end;

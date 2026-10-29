@@ -365,6 +365,19 @@ create policy "members can read their orgs stage required fields"
 on crm.lead_stage_required_fields for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
+-- [crm] P3-07d: writes go through crm.create_task & co. (10-29w), gated
+-- on deals.edit; reads additionally re-check lead_scope visibility (the
+-- same predicate crm.leads' own RLS policy uses), since a task is only
+-- ever meaningful in the context of a lead the caller can already see.
+alter table crm.tasks enable row level security;
+
+create policy "members can read tasks on leads they can see"
+on crm.tasks for select to authenticated, anon
+using (
+  organization_id in (select public.get_authorized_orgs('member'))
+  and crm._lead_visible_to_caller(lead_id)
+);
+
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
 -- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
 -- 10-10) enforced here -- this is the "pipeline UI" phase the deferral
