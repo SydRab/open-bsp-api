@@ -1468,6 +1468,11 @@ isOneToOne: false
               "address": string,"organization_id": string,"service": Database["public"]['Enums']["service"]
             }[]
                            },
+"get_lead_history":
+{ Args: { "p_lead_id": string }; Returns: {
+              "action": string,"actor_agent_id": string,"actor_name": string,"actor_type": string,"created_at": string,"details": Json,"id": number
+            }[]
+                           },
 "get_my_invitation_roles":
 { Args: Record<PropertyKey, never>; Returns: {
               "invitation_id": string,"role_key": string,"role_name": string

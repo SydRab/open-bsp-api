@@ -114,6 +114,8 @@ grant execute on function crm.set_lead_status(uuid, text, uuid) to authenticated
 grant execute on function crm.set_lead_fields(uuid, jsonb) to authenticated;
 grant execute on function crm.set_stage_required_fields(uuid, uuid[]) to authenticated;
 grant execute on function crm.bulk_set_lead_stage(uuid[], uuid) to authenticated;
+-- [crm] P3-07c.
+grant execute on function crm.get_lead_history(uuid) to authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
 -- engine and the internal functions it calls) is trigger/system-only, no
