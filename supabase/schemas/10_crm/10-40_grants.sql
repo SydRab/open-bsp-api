@@ -125,6 +125,10 @@ grant execute on function crm.set_my_whatsapp_address(uuid, text) to authenticat
 -- Called directly from crm.tasks' own RLS policy (10-30) -- same reasoning
 -- as crm.resolve_lead_scope/caller_agent (P3-07a).
 grant execute on function crm._lead_visible_to_caller(uuid) to anon, authenticated;
+-- [crm] P3-07e.
+grant execute on function crm.create_lead_note(uuid, text) to authenticated;
+grant execute on function crm.update_lead_note(uuid, text) to authenticated;
+grant execute on function crm.delete_lead_note(uuid) to authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
 -- engine and the internal functions it calls) is trigger/system-only, no

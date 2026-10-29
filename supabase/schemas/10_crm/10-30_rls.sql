@@ -378,6 +378,18 @@ using (
   and crm._lead_visible_to_caller(lead_id)
 );
 
+-- [crm] P3-07e: writes go through crm.create_lead_note & co. (10-29y),
+-- gated on deals.edit; reads re-check lead_scope visibility the same way
+-- crm.tasks does, above.
+alter table crm.lead_notes enable row level security;
+
+create policy "members can read notes on leads they can see"
+on crm.lead_notes for select to authenticated, anon
+using (
+  organization_id in (select public.get_authorized_orgs('member'))
+  and crm._lead_visible_to_caller(lead_id)
+);
+
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
 -- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
 -- 10-10) enforced here -- this is the "pipeline UI" phase the deferral

@@ -490,6 +490,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"lead_notes": {
+                  Row: {
+                    "author_agent_id": string,"body": string,"created_at": string,"id": string,"lead_id": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_agent_id": string,"body": string,"created_at"?: string,"id"?: string,"lead_id": string,"organization_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_agent_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"lead_id"?: string,"organization_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lead_notes_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: false
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"lead_qualification_state": {
                   Row: {
                     "asked_at": string | null,"completed_at": string | null,"created_at": string,"current_question_key": string | null,"last_nudged_at": string | null,"lead_id": string,"nudge_count": number,"organization_id": string,"updated_at": string,"_send_nudge": undefined | null
@@ -1370,6 +1390,9 @@ isOneToOne: false
 "create_lead_drop_reason":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
+"create_lead_note":
+{ Args: { "p_body": string,"p_lead_id": string }; Returns: string
+                           },
 "create_lead_quality":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
@@ -1415,6 +1438,9 @@ isOneToOne: false
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_lead_drop_reason":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_lead_note":
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_lead_quality":
@@ -1782,6 +1808,9 @@ isOneToOne: false
                            },
 "update_lead_drop_reason":
 { Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
+                           },
+"update_lead_note":
+{ Args: { "p_body": string,"p_id": string }; Returns: undefined
                            },
 "update_lead_quality":
 { Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
