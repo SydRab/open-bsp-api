@@ -189,6 +189,10 @@ grant execute on function crm.update_custom_field(uuid, jsonb, jsonb, boolean) t
 grant execute on function crm.archive_custom_field(uuid, boolean) to authenticated;
 grant execute on function crm.set_contact_fields(uuid, jsonb) to authenticated;
 grant execute on function crm.filter_contacts(uuid, jsonb, int, int) to anon, authenticated;
+-- [crm] P3-11c: the member-facing consent wrapper (10-29zi). The functions
+-- it calls internally (record_consent_event, 10-29d) stay service_role-only
+-- by the blanket grant above -- unchanged.
+grant execute on function crm.set_contact_consent(uuid, text, public.service, text, text, text) to authenticated;
 grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text) to anon, authenticated;
 -- Used by the functions above, which run as the caller.
 grant execute on function crm.clean_custom_fields(jsonb) to anon, authenticated;

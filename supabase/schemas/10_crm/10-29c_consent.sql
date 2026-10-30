@@ -45,7 +45,11 @@ check (status in ('opted_in', 'opted_out'));
 
 alter table only crm.contacts_consent
 add constraint contacts_consent_source_check
-check (source in ('keyword', 'admin', 'signup_default', 'api'));
+-- [crm] P3-11c: 'csv_import' added for crm.set_contact_consent, the member-
+-- facing wrapper CSV import uses -- kept distinct from 'admin' so a later
+-- audit can tell a bulk import's self-attested consent apart from a one-off
+-- manual toggle.
+check (source in ('keyword', 'admin', 'signup_default', 'api', 'csv_import'));
 
 -- Serves crm.get_consent_status's "latest row" lookup directly off the index
 -- (no extra sort step): leads with the identity, trails with seq desc.

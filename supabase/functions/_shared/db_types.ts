@@ -1848,6 +1848,9 @@ isOneToOne: false
 "set_assignment_rule":
 { Args: { "p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_organization_id": string,"p_sort_order"?: number,"p_team_id": string }; Returns: string
                            },
+"set_contact_consent":
+{ Args: { "p_address": string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source"?: string,"p_status": string }; Returns: undefined
+                           },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
                            },
