@@ -21,8 +21,8 @@ select tests.add_member(:'org', 'viewer@test.local', 'viewer') as viewer_agent \
 
 select is(
   (select count(*)::int from crm.lead_stages where organization_id = :'org'),
-  6,
-  'a new org is seeded with the 6 preset lead stages'
+  7,
+  'a new org is seeded with the 7 preset lead stages (incl. P3-09''s Trial Booked fix)'
 );
 select is(
   (select count(*)::int from crm.lead_qualities where organization_id = :'org'),

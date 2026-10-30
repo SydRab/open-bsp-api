@@ -402,6 +402,26 @@ using (
   and crm._lead_visible_to_caller(lead_id)
 );
 
+-- [crm] P3-09: writes go through crm.set_event_mapping/delete_event_mapping
+-- (organization.manage) -- any member may read the mapping catalog (same
+-- "any member reads" bar every other crm settings/catalog table uses).
+alter table crm.lead_event_mappings enable row level security;
+
+create policy "members can read event mappings"
+on crm.lead_event_mappings for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+-- Writes go through crm._enqueue_conversion_event/claim_outbox_event/
+-- mark_outbox_event_* (service-role/internal) and crm.replay_outbox_event
+-- (organization.manage) -- not lead_scope-gated like crm.tasks/lead_notes/
+-- trial_bookings, since this is an ops/delivery-log view, not a
+-- lead-working view.
+alter table crm.outbox_events enable row level security;
+
+create policy "members can read outbox events"
+on crm.outbox_events for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
 -- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
 -- 10-10) enforced here -- this is the "pipeline UI" phase the deferral

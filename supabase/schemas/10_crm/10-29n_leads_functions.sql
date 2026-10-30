@@ -422,6 +422,14 @@ begin
     p_organization_id, 'lead.stage_changed', 'lead', p_lead_id::text,
     jsonb_build_object('stage_id', p_stage_id)
   );
+
+  -- [crm] P3-09: moving OUT of a stage (p_stage_id null) has nothing to
+  -- report; also covers crm._advance_to_trial_booked_stage's (P3-08) own
+  -- call into this same function, for free -- one choke point, every
+  -- caller benefits.
+  if p_stage_id is not null then
+    perform crm._enqueue_conversion_event(p_organization_id, p_lead_id, 'stage', p_stage_id::text);
+  end if;
 end;
 $$;
 

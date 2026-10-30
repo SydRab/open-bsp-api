@@ -490,6 +490,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"lead_event_mappings": {
+                  Row: {
+                    "created_at": string,"id": string,"meta_event_name": string,"organization_id": string,"trigger_stage_id": string | null,"trigger_status": string | null,"trigger_type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"meta_event_name": string,"organization_id": string,"trigger_stage_id"?: string | null,"trigger_status"?: string | null,"trigger_type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"meta_event_name"?: string,"organization_id"?: string,"trigger_stage_id"?: string | null,"trigger_status"?: string | null,"trigger_type"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lead_event_mappings_stage_fkey"
+      columns: ["organization_id","trigger_stage_id"]
+isOneToOne: false
+      referencedRelation: "lead_stages"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"lead_notes": {
                   Row: {
                     "author_agent_id": string,"body": string,"created_at": string,"id": string,"lead_id": string,"organization_id": string,"updated_at": string
@@ -763,6 +783,26 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"outbox_events": {
+                  Row: {
+                    "attempts": number,"created_at": string,"ctwa_clid": string,"currency": string | null,"event_name": string,"event_time": string,"id": string,"last_attempt_at": string | null,"lead_id": string,"organization_address": string,"organization_id": string,"processed_at": string | null,"processing_error": string | null,"value": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"ctwa_clid": string,"currency"?: string | null,"event_name": string,"event_time": string,"id"?: string,"last_attempt_at"?: string | null,"lead_id": string,"organization_address": string,"organization_id": string,"processed_at"?: string | null,"processing_error"?: string | null,"value"?: number | null
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"ctwa_clid"?: string,"currency"?: string | null,"event_name"?: string,"event_time"?: string,"id"?: string,"last_attempt_at"?: string | null,"lead_id"?: string,"organization_address"?: string,"organization_id"?: string,"processed_at"?: string | null,"processing_error"?: string | null,"value"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "outbox_events_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: false
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"pack_versions": {
                   Row: {
@@ -1264,6 +1304,9 @@ isOneToOne: false
 "_create_notification":
 { Args: { "p_agent_id": string,"p_body": string,"p_kind": string,"p_lead_id"?: string,"p_organization_id": string,"p_title": string }; Returns: undefined
                            },
+"_enqueue_conversion_event":
+{ Args: { "p_lead_id": string,"p_organization_id": string,"p_trigger_type": string,"p_trigger_value": string }; Returns: undefined
+                           },
 "_ensure_assignment":
 { Args: { "p_lead_id": string,"p_organization_id": string }; Returns: undefined
                            },
@@ -1398,6 +1441,11 @@ isOneToOne: false
 "cancel_trial_booking":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"claim_outbox_event":
+{ Args: { "p_id": string }; Returns: {
+              "attempts": number,"ctwa_clid": string,"currency": string,"event_name": string,"event_time": string,"id": string,"lead_id": string,"organization_address": string,"organization_id": string,"value": number
+            }[]
+                           },
 "claim_webhook_event":
 { Args: { "p_id": string }; Returns: {
               "attempts": number,"raw_body": string
@@ -1469,6 +1517,9 @@ isOneToOne: false
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_canned_reply":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_event_mapping":
 { Args: { "p_id": string }; Returns: undefined
                            },
 "delete_lead_drop_reason":
@@ -1641,6 +1692,12 @@ isOneToOne: false
 "mark_notification_read":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"mark_outbox_event_failed":
+{ Args: { "p_error": string,"p_id": string }; Returns: undefined
+                           },
+"mark_outbox_event_sent":
+{ Args: { "p_id": string,"p_meta_event_id"?: string }; Returns: undefined
+                           },
 "my_permissions":
 { Args: { "p_organization_id": string }; Returns: string[]
                            },
@@ -1674,6 +1731,9 @@ isOneToOne: false
 { Args: { "p_content_type": string,"p_locale"?: string,"p_organization_id": string,"p_text": string }; Returns: {
               "attached": boolean,"disclaimer_kind": string,"disclaimer_locale": string,"disclaimer_version": number,"text": string
             }[]
+                           },
+"replay_outbox_event":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "replay_webhook_event":
 { Args: { "p_id": string }; Returns: undefined
@@ -1719,6 +1779,9 @@ isOneToOne: false
 "revoke_support_access":
 { Args: { "p_admin_id": string,"p_grant_id": string }; Returns: undefined
                            },
+"seed_default_event_mapping":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
 "seed_lead_catalogs":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -1742,6 +1805,9 @@ isOneToOne: false
                            },
 "set_disclaimer":
 { Args: { "p_kind": string,"p_locale": string,"p_organization_id": string,"p_text": string }; Returns: number
+                           },
+"set_event_mapping":
+{ Args: { "p_meta_event_name": string,"p_organization_id": string,"p_trigger_type": string,"p_trigger_value": string }; Returns: string
                            },
 "set_feature_kill_switch":
 { Args: { "p_enabled": boolean,"p_feature_key": string }; Returns: undefined

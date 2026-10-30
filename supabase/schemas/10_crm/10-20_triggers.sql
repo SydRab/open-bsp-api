@@ -27,6 +27,8 @@ begin
   perform crm.seed_task_reminder_template(new.id);
   -- [crm] P3-08
   perform crm.seed_trial_reminder_template(new.id);
+  -- [crm] P3-09
+  perform crm.seed_default_event_mapping(new.id);
 
   return null;
 end;

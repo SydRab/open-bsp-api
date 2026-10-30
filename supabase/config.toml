@@ -88,6 +88,14 @@ verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/whatsapp-webhook-processor/index.ts"
 
+# [crm] P3-09: sends crm.outbox_events rows to Meta's Conversions API for
+# Business Messaging. Invoked by pg_cron (process-pending-outbox-events) —
+# same verify_jwt=false + manual service-role bearer check.
+[functions.crm-conversion-sender]
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/crm-conversion-sender/index.ts"
+
 # Connector services deploy the generic webhook/dispatcher under their own
 # slug (the dispatcher trigger routes by `/{service}-dispatcher`); the
 # generic code derives the service from the slug.

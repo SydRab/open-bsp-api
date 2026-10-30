@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(25);
+select plan(26);
 
 select tests.create_user('owner@test.local') as owner_user \gset
 select tests.create_user('rep@test.local') as rep_user \gset
@@ -177,6 +177,14 @@ select isnt_empty(
     :'org', :'lead_2', :'slot_start'
   ),
   'tapping an offered slot books it'
+);
+select isnt_empty(
+  format(
+    $$ select 1 from crm.leads l join crm.lead_stages s on s.id = l.stage_id
+       where l.id = %L and s.key = 'trial_booked' $$,
+    :'lead_2'
+  ),
+  '...and advances the lead into the pack''s "Trial Booked" stage (fixed in P3-09 -- this stage did not exist when P3-08 shipped)'
 );
 select isnt_empty(
   format(

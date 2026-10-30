@@ -133,6 +133,10 @@ grant execute on function crm.delete_lead_note(uuid) to authenticated;
 grant execute on function crm.list_upcoming_trial_slots(uuid) to authenticated;
 grant execute on function crm.reschedule_trial_booking(uuid, timestamp with time zone) to authenticated;
 grant execute on function crm.cancel_trial_booking(uuid) to authenticated;
+-- [crm] P3-09.
+grant execute on function crm.set_event_mapping(uuid, text, text, text) to authenticated;
+grant execute on function crm.delete_event_mapping(uuid) to authenticated;
+grant execute on function crm.replay_outbox_event(uuid) to authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
 -- engine and the internal functions it calls) is trigger/system-only, no
