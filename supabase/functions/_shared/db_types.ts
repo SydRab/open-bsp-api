@@ -1738,6 +1738,16 @@ isOneToOne: false
 "replay_webhook_event":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"report_source_performance":
+{ Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "ad_source_id": string,"converted_count": number,"dropped_count": number,"lead_count": number,"qualified_count": number,"source": string,"total_deal_value": number
+            }[]
+                           },
+"report_status_funnel":
+{ Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "lead_count": number,"status": string
+            }[]
+                           },
 "request_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: string
                            },
