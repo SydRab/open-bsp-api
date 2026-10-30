@@ -143,6 +143,9 @@ grant execute on function crm.report_source_performance(uuid, timestamp with tim
 -- [crm] P3-10b.
 grant execute on function crm.report_response_times(uuid, timestamp with time zone, timestamp with time zone) to authenticated;
 grant execute on function crm.report_rep_leaderboard(uuid, timestamp with time zone, timestamp with time zone) to authenticated;
+-- [crm] P3-11b.
+grant execute on function crm.set_contact_tag(uuid, uuid, boolean) to authenticated;
+grant execute on function crm.export_contacts(uuid, timestamp with time zone, timestamp with time zone) to authenticated;
 
 -- Qualification engine (P3-04). The engine itself (crm.z_run_qualification_
 -- engine and the internal functions it calls) is trigger/system-only, no

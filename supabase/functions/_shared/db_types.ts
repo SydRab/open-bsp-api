@@ -366,6 +366,32 @@ isOneToOne: false
       referencedColumns: ["organization_id","id"]
     }
                   ]
+                },"contact_tags": {
+                  Row: {
+                    "contact_id": string,"created_at": string,"organization_id": string,"tag_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contact_id": string,"created_at"?: string,"organization_id": string,"tag_id": string
+                  }
+                  Update: {
+                    "contact_id"?: string,"created_at"?: string,"organization_id"?: string,"tag_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contact_tags_contact_fkey"
+      columns: ["organization_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts"
+      referencedColumns: ["organization_id","id"]
+    },{
+      foreignKeyName: "contact_tags_tag_fkey"
+      columns: ["organization_id","tag_id"]
+isOneToOne: false
+      referencedRelation: "tags"
+      referencedColumns: ["organization_id","id"]
+    }
+                  ]
                 },"contacts": {
                   Row: {
                     "created_at": string,"custom_fields": NonNullable<Json>,"display_name": string | null,"first_touch_at": string | null,"first_touch_referral": Json | null,"id": string,"last_touch_at": string | null,"last_touch_referral": Json | null,"locale": string | null,"organization_id": string,"updated_at": string,"welcome_sent_at": string | null
@@ -1555,6 +1581,11 @@ isOneToOne: false
 "disclaimer_text_error":
 { Args: { "p_kind": string,"p_text": string }; Returns: string
                            },
+"export_contacts":
+{ Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "address": string,"consent_status": string,"contact_id": string,"created_at": string,"deal_value": number,"display_name": string,"lead_stage": string,"lead_status": string,"service": Database["public"]['Enums']["service"],"tags": string
+            }[]
+                           },
 "field_definition_error":
 { Args: { "p_def": Json }; Returns: string
                            },
@@ -1819,6 +1850,9 @@ isOneToOne: false
                            },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json
+                           },
+"set_contact_tag":
+{ Args: { "p_contact_id": string,"p_tag_id": string,"p_tagged": boolean }; Returns: undefined
                            },
 "set_conversation_tag":
 { Args: { "p_conversation_id": string,"p_tag_id": string,"p_tagged": boolean }; Returns: undefined

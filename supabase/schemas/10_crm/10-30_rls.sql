@@ -314,6 +314,13 @@ create policy "members can read their orgs conversation tags"
 on crm.conversation_tags for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
+-- [crm] P3-11b: writes go through crm.set_contact_tag (contacts.edit).
+alter table crm.contact_tags enable row level security;
+
+create policy "members can read their orgs contact tags"
+on crm.contact_tags for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
 -- Assignments (P2-09c) ------------------------------------------------------------
 
 alter table crm.conversation_assignments enable row level security;
