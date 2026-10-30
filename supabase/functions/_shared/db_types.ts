@@ -1729,6 +1729,9 @@ isOneToOne: false
 "mark_outbox_event_sent":
 { Args: { "p_id": string,"p_meta_event_id"?: string }; Returns: undefined
                            },
+"merge_contacts":
+{ Args: { "p_primary_contact_id": string,"p_secondary_contact_id": string }; Returns: undefined
+                           },
 "my_permissions":
 { Args: { "p_organization_id": string }; Returns: string[]
                            },
