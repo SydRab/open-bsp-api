@@ -1738,6 +1738,16 @@ isOneToOne: false
 "replay_webhook_event":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"report_rep_leaderboard":
+{ Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "agent_id": string,"avg_response_minutes": number,"breached_count": number,"deal_value_won": number,"leads_assigned": number,"leads_converted": number
+            }[]
+                           },
+"report_response_times":
+{ Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
+              "assigned_count": number,"avg_response_minutes": number,"breached_count": number,"responded_count": number
+            }[]
+                           },
 "report_source_performance":
 { Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
               "ad_source_id": string,"converted_count": number,"dropped_count": number,"lead_count": number,"qualified_count": number,"source": string,"total_deal_value": number
