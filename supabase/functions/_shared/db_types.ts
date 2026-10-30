@@ -1204,6 +1204,26 @@ isOneToOne: false
       referencedColumns: ["key"]
     }
                   ]
+                },"trial_bookings": {
+                  Row: {
+                    "cancelled_at": string | null,"confirmed_at": string,"created_at": string,"id": string,"lead_id": string,"organization_id": string,"reminder_sent_at": string | null,"slot_end": string,"slot_start": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cancelled_at"?: string | null,"confirmed_at"?: string,"created_at"?: string,"id"?: string,"lead_id": string,"organization_id": string,"reminder_sent_at"?: string | null,"slot_end": string,"slot_start": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "cancelled_at"?: string | null,"confirmed_at"?: string,"created_at"?: string,"id"?: string,"lead_id"?: string,"organization_id"?: string,"reminder_sent_at"?: string | null,"slot_end"?: string,"slot_start"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trial_bookings_lead_fkey"
+      columns: ["lead_id"]
+isOneToOne: false
+      referencedRelation: "leads"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"vertical_packs": {
                   Row: {
                     "created_at": string,"description": string | null,"is_default": boolean,"key": string,"name": string
@@ -1238,7 +1258,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "_create_notification":
+            "_advance_to_trial_booked_stage":
+{ Args: { "p_lead_id": string,"p_organization_id": string }; Returns: undefined
+                           },
+"_create_notification":
 { Args: { "p_agent_id": string,"p_body": string,"p_kind": string,"p_lead_id"?: string,"p_organization_id": string,"p_title": string }; Returns: undefined
                            },
 "_ensure_assignment":
@@ -1289,8 +1312,16 @@ isOneToOne: false
 "_send_qualification_question":
 { Args: { "p_contact_id": string,"p_conversation_address": string,"p_conversation_id": string,"p_is_nudge"?: boolean,"p_organization_address": string,"p_organization_id": string,"p_question": Omit<Database["crm"]['Tables']["organization_pack_items"]['Row'], Database["crm"]['Tables']["organization_pack_items"]['ComputedFields']>,"p_service": Database["public"]['Enums']["service"] }; Returns: undefined
                            },
+"_send_trial_slot_offer":
+{ Args: { "p_lead_id": string,"p_organization_id": string }; Returns: undefined
+                           },
 "_set_lead_stage":
 { Args: { "p_lead_id": string,"p_organization_id": string,"p_stage_id": string }; Returns: undefined
+                           },
+"_upcoming_trial_slots":
+{ Args: { "p_limit"?: number,"p_organization_id": string }; Returns: {
+              "seats_left": number,"slot_end": string,"slot_start": string
+            }[]
                            },
 "admin_get_audit_log":
 { Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
@@ -1363,6 +1394,9 @@ isOneToOne: false
       } },
 "cancel_organization_deletion":
 { Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"cancel_trial_booking":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "claim_webhook_event":
 { Args: { "p_id": string }; Returns: {
@@ -1596,6 +1630,11 @@ isOneToOne: false
               "created_at": string,"latest_pack_version": number,"name": string,"organization_id": string,"pack_key": string,"pack_version": number,"seats_cap": number,"seats_used": number,"slug": string,"status": string,"tier_id": string,"tier_name": string
             }[]
                            },
+"list_upcoming_trial_slots":
+{ Args: { "p_organization_id": string }; Returns: {
+              "seats_left": number,"slot_end": string,"slot_start": string
+            }[]
+                           },
 "mark_all_notifications_read":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -1651,6 +1690,9 @@ isOneToOne: false
 "require_platform_admin":
 { Args: { "p_admin_id": string }; Returns: undefined
                            },
+"reschedule_trial_booking":
+{ Args: { "p_lead_id": string,"p_slot_start": string }; Returns: string
+                           },
 "reset_pack_item":
 { Args: { "p_item_id": string }; Returns: undefined
                            },
@@ -1684,6 +1726,9 @@ isOneToOne: false
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
 "seed_task_reminder_template":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"seed_trial_reminder_template":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
 "set_assignment_rule":
@@ -1783,6 +1828,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "sweep_task_reminders":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"sweep_trial_reminders":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "tier_rank":

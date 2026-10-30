@@ -390,6 +390,18 @@ using (
   and crm._lead_visible_to_caller(lead_id)
 );
 
+-- [crm] P3-08: writes go through crm.reschedule_trial_booking & co.
+-- (10-29za), gated on deals.edit; reads re-check lead_scope visibility
+-- the same way crm.tasks and crm.lead_notes do, above.
+alter table crm.trial_bookings enable row level security;
+
+create policy "members can read trial bookings on leads they can see"
+on crm.trial_bookings for select to authenticated, anon
+using (
+  organization_id in (select public.get_authorized_orgs('member'))
+  and crm._lead_visible_to_caller(lead_id)
+);
+
 -- Writes go through crm.find_or_create_lead & co., gated on deals.edit.
 -- [crm] P3-07a: lead_scope ('own'/'team'/'all', crm.resolve_lead_scope,
 -- 10-10) enforced here -- this is the "pipeline UI" phase the deferral

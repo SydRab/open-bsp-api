@@ -48,7 +48,9 @@ add constraint notifications_kind_check
 check (kind in (
   'lead_sla_breached', 'lead_escalated_to_manager', 'lead_auto_reassigned',
   -- [crm] P3-07d
-  'task_due'
+  'task_due',
+  -- [crm] P3-08
+  'trial_booked'
 ));
 
 -- The bell icon's own query: this agent's unread notifications, newest

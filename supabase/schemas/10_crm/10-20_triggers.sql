@@ -25,6 +25,8 @@ begin
   perform crm.seed_qualification_scoring(new.id);
   -- [crm] P3-07d
   perform crm.seed_task_reminder_template(new.id);
+  -- [crm] P3-08
+  perform crm.seed_trial_reminder_template(new.id);
 
   return null;
 end;
