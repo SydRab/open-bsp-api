@@ -6,7 +6,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(10);
 
 select tests.create_user('owner@test.local') as owner_user \gset
 select tests.create_user('rep@test.local') as rep_user \gset
@@ -71,6 +71,18 @@ select is(
    order by seq desc limit 1),
   'admin',
   'a caller can pass a different source (e.g. a future manual toggle)'
+);
+
+-- p_note (P4-01): the consent ledger's "proof text/URL/form id" -------------------------------
+
+select crm.set_contact_consent(:'org', '910000000000', 'whatsapp', '919000000504', 'opted_in', 'admin', 'https://forms.example/signed/abc123');
+select is(
+  (select note from crm.contacts_consent
+   where organization_id = :'org' and organization_address = '910000000000'
+     and service = 'whatsapp' and address = '919000000504'
+   order by seq desc limit 1),
+  'https://forms.example/signed/abc123',
+  'an optional note (proof text/URL/form id) is stored on the event'
 );
 
 -- An invalid status/source is still rejected by the table's own check constraints --------------

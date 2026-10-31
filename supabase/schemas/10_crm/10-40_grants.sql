@@ -197,7 +197,9 @@ grant execute on function crm.filter_contacts(uuid, jsonb, int, int) to anon, au
 -- [crm] P3-11c: the member-facing consent wrapper (10-29zi). The functions
 -- it calls internally (record_consent_event, 10-29d) stay service_role-only
 -- by the blanket grant above -- unchanged.
-grant execute on function crm.set_contact_consent(uuid, text, public.service, text, text, text) to authenticated;
+grant execute on function crm.set_contact_consent(uuid, text, public.service, text, text, text, text) to authenticated;
+-- [crm] P4-01: durable record of the CSV import wizard's attestation.
+grant execute on function crm.record_import_attestation(uuid, int, int) to authenticated;
 -- [crm] P3-11d: contact merge (10-29zj).
 grant execute on function crm.merge_contacts(uuid, uuid) to authenticated;
 grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text) to anon, authenticated;

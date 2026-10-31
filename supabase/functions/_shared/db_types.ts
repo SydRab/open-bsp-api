@@ -1758,6 +1758,9 @@ isOneToOne: false
 "record_consent_event":
 { Args: { "p_address": string,"p_keyword_matched"?: string,"p_note"?: string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source": string,"p_status": string }; Returns: undefined
                            },
+"record_import_attestation":
+{ Args: { "p_marked_opted_in_count": number,"p_organization_id": string,"p_row_count": number }; Returns: undefined
+                           },
 "rename_tag":
 { Args: { "p_name": string,"p_tag_id": string }; Returns: undefined
                            },
@@ -1858,7 +1861,7 @@ isOneToOne: false
 { Args: { "p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_organization_id": string,"p_sort_order"?: number,"p_team_id": string }; Returns: string
                            },
 "set_contact_consent":
-{ Args: { "p_address": string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source"?: string,"p_status": string }; Returns: undefined
+{ Args: { "p_address": string,"p_note"?: string,"p_organization_address": string,"p_organization_id": string,"p_service": Database["public"]['Enums']["service"],"p_source"?: string,"p_status": string }; Returns: undefined
                            },
 "set_contact_fields":
 { Args: { "p_contact_id": string,"p_values": Json }; Returns: Json

@@ -9,13 +9,22 @@
 -- metadata. p_source defaults to 'csv_import' (today's only caller) but
 -- stays a parameter so a future manual "mark as opted in" action can reuse
 -- this with p_source = 'admin' instead of writing its own wrapper.
+--
+-- [crm] P4-01: p_note added -- the "proof text/URL/form id" the consent
+-- ledger roadmap line asks for. No new column: crm.contacts_consent's own
+-- `note` already existed (P2-05) and sat unused by every caller until now
+-- -- one free-text field covers proof text, a URL, or a form id equally
+-- well, so a dedicated column per format would be three ways to store the
+-- same kind of value. The manual "record consent" action (P4-01, ui/ui)
+-- is this parameter's first real caller.
 create function crm.set_contact_consent(
   p_organization_id uuid,
   p_organization_address text,
   p_service public.service,
   p_address text,
   p_status text,
-  p_source text default 'csv_import'
+  p_source text default 'csv_import',
+  p_note text default null
 ) returns void
 language plpgsql
 security definer
@@ -26,7 +35,7 @@ begin
 
   perform crm.record_consent_event(
     p_organization_id, p_organization_address, p_service, p_address,
-    p_status, p_source
+    p_status, p_source, null, p_note
   );
 end;
 $$;
