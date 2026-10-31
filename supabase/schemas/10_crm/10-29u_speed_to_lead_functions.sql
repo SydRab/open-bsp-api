@@ -211,6 +211,12 @@ execute function crm.z_record_first_response();
 -- is an crm.audit_log lookup, the same idiom P3-05 uses, so a lead
 -- revisited every 5 minutes is never double-notified or double-
 -- escalated.
+--
+-- [crm] P3-12: every notification step here now also attempts a WhatsApp
+-- delivery via crm._send_internal_whatsapp_alert (10-29zk), the retroactive
+-- fix CLAUDE.md's own WhatsApp-first rule flagged against this sweep from
+-- the day it shipped (P3-06). In-app stays the unconditional durable
+-- record either way -- WhatsApp is additive, never a replacement.
 create function crm.sweep_speed_to_lead_escalation() returns void
 language plpgsql
 security definer
@@ -223,6 +229,9 @@ declare
   v_manager_due timestamp with time zone;
   v_reassign_due timestamp with time zone;
   v_manager_id uuid;
+  v_message_id uuid;
+  v_managers_notified int;
+  v_managers_via_whatsapp int;
 begin
   for v_lead in
     select * from crm.leads
@@ -242,8 +251,16 @@ begin
         'Lead needs a response', 'A lead assigned to you has passed the first-response SLA.',
         v_lead.id
       );
+      v_message_id := crm._send_internal_whatsapp_alert(
+        v_lead.organization_id, v_lead.assigned_to, 'internal_lead_alert',
+        'Lead needs a response: a lead assigned to you has passed the first-response SLA'
+      );
       perform crm.write_audit(
-        v_lead.organization_id, 'lead.sla_breached', 'lead', v_lead.id::text, '{}'::jsonb
+        v_lead.organization_id, 'lead.sla_breached', 'lead', v_lead.id::text,
+        jsonb_build_object(
+          'channel', case when v_message_id is not null then 'whatsapp' else 'in_app' end,
+          'message_id', v_message_id
+        )
       );
     end if;
 
@@ -258,6 +275,8 @@ begin
       where organization_id = v_lead.organization_id and target_type = 'lead'
         and target_id = v_lead.id::text and action = 'lead.escalated_to_manager'
     ) then
+      v_managers_notified := 0;
+      v_managers_via_whatsapp := 0;
       for v_manager_id in
         select m from crm._lead_escalation_managers(v_lead.organization_id, v_lead.assigned_to) m
       loop
@@ -266,9 +285,21 @@ begin
           'Lead response overdue', 'A lead has gone unanswered past the escalation window.',
           v_lead.id
         );
+        v_message_id := crm._send_internal_whatsapp_alert(
+          v_lead.organization_id, v_manager_id, 'internal_lead_alert',
+          'Lead response overdue: a lead has gone unanswered past the escalation window'
+        );
+        v_managers_notified := v_managers_notified + 1;
+        if v_message_id is not null then
+          v_managers_via_whatsapp := v_managers_via_whatsapp + 1;
+        end if;
       end loop;
       perform crm.write_audit(
-        v_lead.organization_id, 'lead.escalated_to_manager', 'lead', v_lead.id::text, '{}'::jsonb
+        v_lead.organization_id, 'lead.escalated_to_manager', 'lead', v_lead.id::text,
+        jsonb_build_object(
+          'managers_notified', v_managers_notified,
+          'managers_notified_via_whatsapp', v_managers_via_whatsapp
+        )
       );
     end if;
 
@@ -289,9 +320,17 @@ begin
         'Lead reassigned', 'A lead assigned to you was reassigned after going unanswered too long.',
         v_lead.id
       );
+      v_message_id := crm._send_internal_whatsapp_alert(
+        v_lead.organization_id, v_lead.assigned_to, 'internal_lead_alert',
+        'Lead reassigned: a lead assigned to you was reassigned after going unanswered too long'
+      );
       perform crm.write_audit(
         v_lead.organization_id, 'lead.auto_reassigned_sla', 'lead', v_lead.id::text,
-        jsonb_build_object('from_agent_id', v_lead.assigned_to)
+        jsonb_build_object(
+          'from_agent_id', v_lead.assigned_to,
+          'channel', case when v_message_id is not null then 'whatsapp' else 'in_app' end,
+          'message_id', v_message_id
+        )
       );
 
       update crm.leads

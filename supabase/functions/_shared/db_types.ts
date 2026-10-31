@@ -1375,6 +1375,9 @@ isOneToOne: false
 "_score_and_complete_qualification":
 { Args: { "p_contact_id": string,"p_lead_id": string,"p_organization_id": string }; Returns: undefined
                            },
+"_send_internal_whatsapp_alert":
+{ Args: { "p_agent_id": string,"p_body": string,"p_organization_id": string,"p_template_name": string }; Returns: string
+                           },
 "_send_nudge":
 { Args: { "p_state": Omit<Database["crm"]['Tables']["lead_qualification_state"]['Row'], Database["crm"]['Tables']["lead_qualification_state"]['ComputedFields']> }; Returns: undefined
                            },
@@ -1834,6 +1837,9 @@ isOneToOne: false
 { Args: { "p_admin_id": string,"p_grant_id": string }; Returns: undefined
                            },
 "seed_default_event_mapping":
+{ Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"seed_internal_lead_alert_template":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
 "seed_lead_catalogs":

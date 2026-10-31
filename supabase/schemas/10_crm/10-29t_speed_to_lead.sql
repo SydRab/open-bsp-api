@@ -50,7 +50,9 @@ check (kind in (
   -- [crm] P3-07d
   'task_due',
   -- [crm] P3-08
-  'trial_booked'
+  'trial_booked',
+  -- [crm] P3-12
+  'lead_assigned'
 ));
 
 -- The bell icon's own query: this agent's unread notifications, newest

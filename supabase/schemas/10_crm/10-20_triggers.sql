@@ -29,6 +29,8 @@ begin
   perform crm.seed_trial_reminder_template(new.id);
   -- [crm] P3-09
   perform crm.seed_default_event_mapping(new.id);
+  -- [crm] P3-12
+  perform crm.seed_internal_lead_alert_template(new.id);
 
   return null;
 end;

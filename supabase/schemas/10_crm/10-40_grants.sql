@@ -175,6 +175,11 @@ grant execute on function crm.unassign_lead(uuid) to authenticated;
 grant execute on function crm.mark_notification_read(uuid) to authenticated;
 grant execute on function crm.mark_all_notifications_read(uuid) to authenticated;
 
+-- Internal WhatsApp alerts (P3-12, 10-29zk) -- crm._send_internal_whatsapp_alert
+-- and crm.z_notify_on_assignment are trigger/sweep-only callers, same
+-- "no grant needed beyond the blanket service_role baseline" shape as the
+-- speed-to-lead engine above.
+
 -- Disclaimers (P1-07). render_with_disclaimer is what senders call (edge
 -- functions as service_role; also members and keys, for previews).
 grant execute on function crm.get_disclaimers(uuid) to anon, authenticated;
