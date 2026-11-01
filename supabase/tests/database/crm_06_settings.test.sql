@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(64);
+select plan(68);
 
 select tests.create_user('owner@test.local');
 select tests.create_user('admin@test.local');
@@ -29,8 +29,8 @@ values ('test.layered', 'test', 'Layered', '{"type": "integer", "minimum": 1, "m
 
 select is(
   (select count(*)::int from crm.setting_definitions where key not like 'test.%'),
-  37,
-  'the first catalog has 37 settings (incl. the P3-08 trial-booking settings)'
+  38,
+  'the first catalog has 38 settings (incl. P3-08''s trial-booking settings and P4-02''s compliance.opt_in_keywords)'
 );
 select is(
   (select count(*)::int from crm.setting_definitions
@@ -107,6 +107,14 @@ select ok(
     '["stop", "Unsubscribe", "BAS"]'
   ) is null,
   'mandatory keywords match in any case, and tenants may add their own'
+);
+select is(
+  crm.validate_setting_value(
+    (select schema from crm.setting_definitions where key = 'compliance.opt_in_keywords'),
+    '["SUBSCRIBE"]'
+  ),
+  'value must include START',
+  '[crm] P4-02: the mandatory opt-in keyword cannot be removed'
 );
 select is(
   crm.validate_setting_value('{"type": "boolean"}', '"yes"'),
@@ -257,6 +265,21 @@ select throws_ok(
 select lives_ok(
   format($$ select crm.set_setting(%L, 'compliance.opt_out_keywords', '["STOP", "UNSUBSCRIBE", "रोकें"]') $$, :'org'),
   'tenants can add their own opt-out keywords'
+);
+select is(
+  crm.get_setting(:'org', 'compliance.opt_in_keywords'),
+  '["START", "SUBSCRIBE"]'::jsonb,
+  '[crm] P4-02: the opt-in keywords default'
+);
+select throws_ok(
+  format($$ select crm.set_setting(%L, 'compliance.opt_in_keywords', '["SUBSCRIBE"]') $$, :'org'),
+  '22023',
+  'value must include START',
+  'START cannot be removed from the opt-in keywords'
+);
+select lives_ok(
+  format($$ select crm.set_setting(%L, 'compliance.opt_in_keywords', '["START", "SUBSCRIBE", "शुरू"]') $$, :'org'),
+  'tenants can add their own opt-in keywords too'
 );
 select throws_ok(
   format($$ select crm.set_setting(%L, 'messaging.quiet_hours', '{"start": "22:00", "end": "08:00"}', 'user') $$, :'org'),

@@ -161,17 +161,52 @@ export function isWithinQuietHours(
 
 /**
  * Pure: does the whole trimmed message (not a substring anywhere in it)
- * case-insensitively equal one of the opt-out keywords? An exact-match rule
- * (the common STOP/UNSUBSCRIBE convention) rather than a substring search,
- * so "please stop sending flyers, I'm in the middle of something" does not
- * opt someone out by accident. Returns the matched keyword, or null.
+ * case-insensitively equal one of the given keywords? An exact-match rule
+ * (the common STOP/UNSUBSCRIBE/START convention) rather than a substring
+ * search, so "please stop sending flyers, I'm in the middle of something"
+ * does not opt someone out by accident. Returns the matched keyword, or
+ * null. [crm] P4-02: generic now -- the one shared rule behind both the
+ * opt-out (`compliance.opt_out_keywords`) and opt-in
+ * (`compliance.opt_in_keywords`) checks.
  */
-export function matchesOptOutKeyword(
+export function matchesKeyword(
   text: string,
   keywords: string[],
 ): string | null {
   const normalized = text.trim().toUpperCase();
   return keywords.find((k) => k.toUpperCase() === normalized) ?? null;
+}
+
+/**
+ * [crm] P4-02: the STOP/START confirmation reply text. Always a direct
+ * reply to the contact's own just-received message, so the 24h window is
+ * guaranteed open -- a plain free-form text, no WhatsApp template/approval
+ * needed (checkSendPolicy's own window-only rule for non-template sends,
+ * above). Bilingual (English and Hindi are the only two languages this
+ * CRM's end customers need, per the same 2026-11-02 instruction that made
+ * English the app's native UI language) -- picked by whether the
+ * CONTACT'S OWN matched keyword was typed in Devanagari script, since that
+ * directly reflects which language they're comfortable with, with no
+ * extra lookup (no per-contact locale column read, no org-default
+ * setting) needed.
+ */
+const DEVANAGARI = /[ऀ-ॿ]/;
+
+export function confirmationTextFor(
+  status: "opted_in" | "opted_out",
+  matchedKeyword: string,
+): string {
+  const hindi = DEVANAGARI.test(matchedKeyword);
+
+  if (status === "opted_out") {
+    return hindi
+      ? "आपको अनसब्सक्राइब कर दिया गया है और अब आपको संदेश नहीं मिलेंगे। फिर से सदस्यता लेने के लिए कभी भी START भेजें।"
+      : "You've been unsubscribed and won't receive further messages. Reply START anytime to resubscribe.";
+  }
+
+  return hindi
+    ? "अब आप हमसे संदेश प्राप्त करने के लिए सब्सक्राइब हो गए हैं। अनसब्सक्राइब करने के लिए कभी भी STOP भेजें।"
+    : "You're now subscribed to receive messages from us. Reply STOP anytime to unsubscribe.";
 }
 
 export async function getSetting<T>(

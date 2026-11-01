@@ -34,7 +34,11 @@ import {
   updateTemplateQuality,
   updateTemplateStatus,
 } from "./whatsapp_templates.ts";
-import { getSetting, matchesOptOutKeyword } from "./send_policy.ts";
+import {
+  confirmationTextFor,
+  getSetting,
+  matchesKeyword,
+} from "./send_policy.ts";
 import { isLimitDowngraded } from "./number_health.ts";
 
 const API_VERSION = "v24.0";
@@ -871,26 +875,42 @@ export async function processWhatsAppWebhookPayload(
             continue;
           }
 
-          // [crm] P2-05: "STOP/unsubscribe is honored instantly" (CLAUDE.md).
-          // Live inbound text only -- this branch is the one case with a
-          // real sender_address (echoes/history below are not from the
-          // contact). Recorded regardless of whether the contact ever had
-          // an opt-in on file: an opt-out event is always safe to write, and
-          // crm.get_consent_status reads the latest row either way.
+          // [crm] P2-05/P4-02: "STOP/unsubscribe is honored instantly"
+          // (CLAUDE.md); P4-02 adds the START/opt-back-in half and a
+          // confirmation reply for either. Live inbound text only -- this
+          // branch is the one case with a real sender_address (echoes/
+          // history below are not from the contact). Recorded regardless
+          // of the contact's current status: a status change is always
+          // safe to write, and crm.get_consent_status reads the latest
+          // row either way.
           if (content.type === "text") {
-            const keywords = await getSetting<string[]>(
-              client,
-              organization_id,
-              "compliance.opt_out_keywords",
-            );
-            const matched = matchesOptOutKeyword(content.text, keywords);
+            const [optOutKeywords, optInKeywords] = await Promise.all([
+              getSetting<string[]>(
+                client,
+                organization_id,
+                "compliance.opt_out_keywords",
+              ),
+              getSetting<string[]>(
+                client,
+                organization_id,
+                "compliance.opt_in_keywords",
+              ),
+            ]);
+
+            const matchedOut = matchesKeyword(content.text, optOutKeywords);
+            const matchedIn = matchedOut
+              ? null
+              : matchesKeyword(content.text, optInKeywords);
+            const matched = matchedOut ?? matchedIn;
+            const status = matchedOut ? "opted_out" : "opted_in";
 
             if (matched) {
-              log.info("Inbound opt-out keyword matched", {
+              log.info("Inbound opt-out/opt-in keyword matched", {
                 organization_id,
                 organization_address,
                 contact_address,
                 matched,
+                status,
               });
 
               await client.schema("crm").rpc("record_consent_event", {
@@ -898,10 +918,29 @@ export async function processWhatsAppWebhookPayload(
                 p_organization_address: organization_address,
                 p_service: "whatsapp",
                 p_address: contact_address,
-                p_status: "opted_out",
+                p_status: status,
                 p_source: "keyword",
                 p_keyword_matched: matched,
               }).throwOnError();
+
+              // A plain free-form reply, not a template: always sent within
+              // the 24h window (it IS the reply to this very message), so
+              // checkSendPolicy's window-only rule for non-template sends
+              // applies -- never blocked by the status we just recorded.
+              messages.push({
+                organization_id,
+                service: "whatsapp",
+                organization_address,
+                conversation_address: contact_address,
+                sender_address: null,
+                content: {
+                  version: "1",
+                  type: "text",
+                  kind: "text",
+                  text: confirmationTextFor(status, matched),
+                },
+                timestamp: new Date().toISOString(),
+              });
             }
           }
 

@@ -4,9 +4,10 @@
 import { assertEquals } from "jsr:@std/assert@1.0.13";
 import {
   categorizeMetaErrorCode,
+  confirmationTextFor,
   isWindowOpen,
   isWithinQuietHours,
-  matchesOptOutKeyword,
+  matchesKeyword,
 } from "./send_policy.ts";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -94,16 +95,17 @@ Deno.test("isWithinQuietHours: a zero-width window (start === end) is never quie
 });
 
 const KEYWORDS = ["STOP", "UNSUBSCRIBE"];
+const OPT_IN_KEYWORDS = ["START", "SUBSCRIBE"];
 
-Deno.test("matchesOptOutKeyword: an exact, case-insensitive match is caught", () => {
-  assertEquals(matchesOptOutKeyword("stop", KEYWORDS), "STOP");
-  assertEquals(matchesOptOutKeyword("  Stop  ", KEYWORDS), "STOP");
-  assertEquals(matchesOptOutKeyword("UNSUBSCRIBE", KEYWORDS), "UNSUBSCRIBE");
+Deno.test("matchesKeyword: an exact, case-insensitive match is caught", () => {
+  assertEquals(matchesKeyword("stop", KEYWORDS), "STOP");
+  assertEquals(matchesKeyword("  Stop  ", KEYWORDS), "STOP");
+  assertEquals(matchesKeyword("UNSUBSCRIBE", KEYWORDS), "UNSUBSCRIBE");
 });
 
-Deno.test("matchesOptOutKeyword: the keyword mentioned inside a longer message does not match", () => {
+Deno.test("matchesKeyword: the keyword mentioned inside a longer message does not match", () => {
   assertEquals(
-    matchesOptOutKeyword(
+    matchesKeyword(
       "please stop sending flyers, I'm in the middle of something",
       KEYWORDS,
     ),
@@ -111,8 +113,35 @@ Deno.test("matchesOptOutKeyword: the keyword mentioned inside a longer message d
   );
 });
 
-Deno.test("matchesOptOutKeyword: an unrelated message does not match", () => {
-  assertEquals(matchesOptOutKeyword("thanks, see you then", KEYWORDS), null);
+Deno.test("matchesKeyword: an unrelated message does not match", () => {
+  assertEquals(matchesKeyword("thanks, see you then", KEYWORDS), null);
+});
+
+Deno.test("matchesKeyword: also works for the opt-in list (P4-02)", () => {
+  assertEquals(matchesKeyword("start", OPT_IN_KEYWORDS), "START");
+  assertEquals(matchesKeyword("stop", OPT_IN_KEYWORDS), null);
+});
+
+Deno.test("confirmationTextFor: English for a Latin-script matched keyword", () => {
+  assertEquals(
+    confirmationTextFor("opted_out", "STOP"),
+    "You've been unsubscribed and won't receive further messages. Reply START anytime to resubscribe.",
+  );
+  assertEquals(
+    confirmationTextFor("opted_in", "START"),
+    "You're now subscribed to receive messages from us. Reply STOP anytime to unsubscribe.",
+  );
+});
+
+Deno.test("confirmationTextFor: Hindi for a Devanagari-script matched keyword", () => {
+  assertEquals(
+    confirmationTextFor("opted_out", "बंद"),
+    "आपको अनसब्सक्राइब कर दिया गया है और अब आपको संदेश नहीं मिलेंगे। फिर से सदस्यता लेने के लिए कभी भी START भेजें।",
+  );
+  assertEquals(
+    confirmationTextFor("opted_in", "शुरू"),
+    "अब आप हमसे संदेश प्राप्त करने के लिए सब्सक्राइब हो गए हैं। अनसब्सक्राइब करने के लिए कभी भी STOP भेजें।",
+  );
 });
 
 Deno.test("categorizeMetaErrorCode: known codes map to their named category", () => {
