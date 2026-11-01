@@ -339,6 +339,15 @@ create policy "members can read their orgs segment members"
 on crm.segment_members for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
+-- [crm] P4-04: campaigns. Same bar as segments just above -- writes go
+-- through the gated functions (broadcasts.create); reading a campaign's
+-- own definition is a broader "any org member" read.
+alter table crm.campaigns enable row level security;
+
+create policy "members can read their orgs campaigns"
+on crm.campaigns for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
 -- Assignments (P2-09c) ------------------------------------------------------------
 
 alter table crm.conversation_assignments enable row level security;

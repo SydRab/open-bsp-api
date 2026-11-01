@@ -211,6 +211,16 @@ grant execute on function crm.delete_segment(uuid) to authenticated;
 grant execute on function crm.refresh_segment(uuid) to authenticated;
 grant execute on function crm.preview_segment_count(uuid, jsonb) to authenticated;
 grant execute on function crm.get_segment_contacts(uuid, int, int) to authenticated;
+-- [crm] P4-04: campaigns (10-29zn). crm._validate_campaign_variable_mapping/
+-- _template_placeholder_count/_render_campaign_component_params are
+-- internal, called only from the functions below -- no grant needed.
+grant execute on function crm.create_campaign(uuid, text, text, text, text, uuid, jsonb) to authenticated;
+grant execute on function crm.update_campaign(uuid, text, uuid, jsonb) to authenticated;
+grant execute on function crm.delete_campaign(uuid) to authenticated;
+grant execute on function crm.schedule_campaign(uuid, date, text) to authenticated;
+grant execute on function crm.unschedule_campaign(uuid) to authenticated;
+grant execute on function crm.estimate_campaign_cost(uuid) to authenticated;
+grant execute on function crm.send_test_campaign_message(uuid) to authenticated;
 grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text) to anon, authenticated;
 -- Used by the functions above, which run as the caller.
 grant execute on function crm.clean_custom_fields(jsonb) to anon, authenticated;

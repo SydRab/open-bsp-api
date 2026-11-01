@@ -139,7 +139,7 @@ select results_eq(
   select t.tbl::text collate "C" from (values
     ('billing.invoices'), ('billing.ledger'), ('billing.payments'),
     ('billing.subscriptions'), ('billing.usage'), ('crm.assignment_rules'),
-    ('crm.audit_log'), ('crm.canned_replies'), ('crm.contact_addresses'),
+    ('crm.audit_log'), ('crm.campaigns'), ('crm.canned_replies'), ('crm.contact_addresses'),
     ('crm.contacts'), ('crm.contact_tags'), ('crm.contacts_consent'), ('crm.conversation_assignments'), ('crm.conversation_tags'), ('crm.disclaimer_versions'), ('crm.invitation_roles'),
     ('crm.lead_drop_reasons'), ('crm.lead_event_mappings'), ('crm.lead_notes'), ('crm.lead_qualification_state'), ('crm.lead_qualities'),
     ('crm.lead_stage_required_fields'), ('crm.lead_stages'), ('crm.leads'),

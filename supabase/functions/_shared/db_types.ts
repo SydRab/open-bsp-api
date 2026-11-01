@@ -1,4 +1,3 @@
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -331,6 +330,26 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"campaigns": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"organization_address": string,"organization_id": string,"scheduled_at": string | null,"segment_id": string,"status": string,"template_language": string,"template_name": string,"updated_at": string,"variable_mapping": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"organization_address": string,"organization_id": string,"scheduled_at"?: string | null,"segment_id": string,"status"?: string,"template_language": string,"template_name": string,"updated_at"?: string,"variable_mapping"?: NonNullable<Json>
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"organization_address"?: string,"organization_id"?: string,"scheduled_at"?: string | null,"segment_id"?: string,"status"?: string,"template_language"?: string,"template_name"?: string,"updated_at"?: string,"variable_mapping"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "campaigns_segment_id_fkey"
+      columns: ["segment_id"]
+isOneToOne: false
+      referencedRelation: "segments"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"canned_replies": {
                   Row: {
@@ -1433,6 +1452,9 @@ isOneToOne: false
 "_pick_assignee":
 { Args: { "p_organization_id": string,"p_team_id": string }; Returns: string
                            },
+"_render_campaign_component_params":
+{ Args: { "p_component": string,"p_count": number,"p_example_values": (string)[],"p_variable_mapping": Json }; Returns: Json
+                           },
 "_score_and_complete_qualification":
 { Args: { "p_contact_id": string,"p_lead_id": string,"p_organization_id": string }; Returns: undefined
                            },
@@ -1451,10 +1473,16 @@ isOneToOne: false
 "_set_lead_stage":
 { Args: { "p_lead_id": string,"p_organization_id": string,"p_stage_id": string }; Returns: undefined
                            },
+"_template_placeholder_count":
+{ Args: { "p_text": string }; Returns: number
+                           },
 "_upcoming_trial_slots":
 { Args: { "p_limit"?: number,"p_organization_id": string }; Returns: {
               "seats_left": number,"slot_end": string,"slot_start": string
             }[]
+                           },
+"_validate_campaign_variable_mapping":
+{ Args: { "p_components": Json,"p_mapping": Json,"p_organization_id": string }; Returns: undefined
                            },
 "admin_get_audit_log":
 { Args: { "p_admin_id": string,"p_before_id"?: number,"p_limit"?: number,"p_organization_id": string }; Returns: {
@@ -1553,6 +1581,9 @@ isOneToOne: false
 "count_recent_marketing_sends":
 { Args: { "p_conversation_address": string,"p_organization_address": string,"p_organization_id": string,"p_period_days": number }; Returns: number
                            },
+"create_campaign":
+{ Args: { "p_name": string,"p_organization_address": string,"p_organization_id": string,"p_segment_id": string,"p_template_language": string,"p_template_name": string,"p_variable_mapping"?: Json }; Returns: string
+                           },
 "create_canned_reply":
 { Args: { "p_content": string,"p_name": string,"p_organization_id": string }; Returns: string
                            },
@@ -1609,6 +1640,9 @@ isOneToOne: false
 "delete_assignment_rule":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"delete_campaign":
+{ Args: { "p_campaign_id": string }; Returns: undefined
+                           },
 "delete_canned_reply":
 { Args: { "p_id": string }; Returns: undefined
                            },
@@ -1650,6 +1684,11 @@ isOneToOne: false
                            },
 "disclaimer_text_error":
 { Args: { "p_kind": string,"p_text": string }; Returns: string
+                           },
+"estimate_campaign_cost":
+{ Args: { "p_campaign_id": string }; Returns: {
+              "audience_count": number,"currency": string,"estimated_total": number,"opted_in_count": number,"rate": number
+            }[]
                            },
 "export_contacts":
 { Args: { "p_from"?: string,"p_organization_id": string,"p_to"?: string }; Returns: {
@@ -1935,6 +1974,9 @@ isOneToOne: false
 "revoke_support_access":
 { Args: { "p_admin_id": string,"p_grant_id": string }; Returns: undefined
                            },
+"schedule_campaign":
+{ Args: { "p_campaign_id": string,"p_local_date": string,"p_local_time": string }; Returns: undefined
+                           },
 "seed_default_event_mapping":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
@@ -1952,6 +1994,9 @@ isOneToOne: false
                            },
 "seed_trial_reminder_template":
 { Args: { "p_organization_id": string }; Returns: undefined
+                           },
+"send_test_campaign_message":
+{ Args: { "p_campaign_id": string }; Returns: string
                            },
 "set_assignment_rule":
 { Args: { "p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_organization_id": string,"p_sort_order"?: number,"p_team_id": string }; Returns: string
@@ -2076,8 +2121,14 @@ isOneToOne: false
 "unassign_lead":
 { Args: { "p_lead_id": string }; Returns: undefined
                            },
+"unschedule_campaign":
+{ Args: { "p_campaign_id": string }; Returns: undefined
+                           },
 "update_assignment_rule":
 { Args: { "p_id": string,"p_is_active": boolean,"p_match_campaign_ref": string,"p_match_language": string,"p_match_source": string,"p_sort_order": number,"p_team_id": string }; Returns: undefined
+                           },
+"update_campaign":
+{ Args: { "p_campaign_id": string,"p_name": string,"p_segment_id": string,"p_variable_mapping": Json }; Returns: undefined
                            },
 "update_canned_reply":
 { Args: { "p_content": string,"p_id": string,"p_name": string }; Returns: undefined
