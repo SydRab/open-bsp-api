@@ -149,6 +149,7 @@ select results_eq(
     ('crm.organization_profiles'), ('crm.outbox_events'),
     ('crm.qualification_question_scores'), ('crm.qualification_score_thresholds'),
     ('crm.role_permissions'), ('crm.roles'),
+    ('crm.segment_members'), ('crm.segments'),
     ('crm.send_rate_buckets'), ('crm.setting_values'), ('crm.support_access_grants'),
     ('crm.tags'), ('crm.tasks'), ('crm.team_members'), ('crm.teams'), ('crm.templates'),
     ('crm.trial_bookings'), ('public.agents'),

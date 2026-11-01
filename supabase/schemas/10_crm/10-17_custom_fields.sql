@@ -459,9 +459,168 @@ begin
 end;
 $$;
 
--- Contacts whose fields match every condition (AND), newest first. Runs as
--- the caller: row level security limits it to contacts they may see. The
--- base of segments (P4-03).
+-- [crm] P4-03: the core of segments -- every condition still ANDed
+-- together, but a condition's `field` can now be a contact custom field
+-- (original P1-06 behavior, unchanged below), or one of three new
+-- non-custom-field types a segment also filters on:
+--   'tag'               op has/not_has, value a crm.tags id.
+--   'stage'             op eq/neq/is_empty/is_not_empty, value a
+--                        crm.lead_stages id. A contact with no lead at all
+--                        reads as stage = null, same as a lead with no
+--                        stage -- is_empty catches both, never silently
+--                        excluded.
+--   'last_contact_days' op lte/gte/is_empty, value an integer. The gap (in
+--                        days) since the contact's own most recent
+--                        last_inbound_at across every one of their
+--                        addresses. `is_empty` means "never contacted" --
+--                        deliberately its own bucket, not folded into
+--                        `gte` (which is "last contacted at least N days
+--                        ago," a real past contact, not the absence of
+--                        one). The "engagement" the roadmap line also
+--                        names is this exact same column, confirmed with
+--                        the user: no separate engagement-score concept
+--                        exists or is being built here -- the UI just
+--                        offers labeled recency buckets (Active/Cooling/
+--                        Dormant/Never) over this one field.
+-- Now security definer, gated `broadcasts.create` -- segments are an
+-- org-wide marketing concept, not scoped to one rep's own
+-- lead_scope/visibility (same reasoning crm.export_contacts, P3-11b,
+-- already used to justify bypassing it). `broadcasts.create` is another
+-- permission that sat in the catalog unused since P1-02, same discovery
+-- pattern as `reports.view`/`contacts.export`.
+create function crm._filter_contact_rows(
+  p_organization_id uuid,
+  p_conditions jsonb
+) returns setof crm.contacts
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $$
+declare
+  v_condition jsonb;
+  v_field text;
+  v_op text;
+  v_equal jsonb := '{}'::jsonb;
+begin
+  if jsonb_typeof(p_conditions) is distinct from 'array' then
+    raise exception 'conditions must be a list' using errcode = '22023';
+  end if;
+
+  for v_condition in select * from jsonb_array_elements(p_conditions) loop
+    v_field := v_condition->>'field';
+    v_op := v_condition->>'op';
+
+    if v_field = 'tag' then
+      if v_op not in ('has', 'not_has') then
+        raise exception 'unknown filter operator % for field tag', v_op using errcode = '22023';
+      end if;
+    elsif v_field = 'stage' then
+      if v_op not in ('eq', 'neq', 'is_empty', 'is_not_empty') then
+        raise exception 'unknown filter operator % for field stage', v_op using errcode = '22023';
+      end if;
+    elsif v_field = 'last_contact_days' then
+      if v_op not in ('lte', 'gte', 'is_empty') then
+        raise exception 'unknown filter operator % for field last_contact_days', v_op
+          using errcode = '22023';
+      end if;
+    else
+      if not exists (
+        select 1 from crm.organization_pack_items i
+        where i.organization_id = p_organization_id
+          and i.kind = 'custom_field'
+          and i.item_key = v_field
+          and i.value->>'entity' = 'contact'
+      ) then
+        raise exception 'unknown field %', v_field using errcode = '22023';
+      end if;
+      if v_op not in (
+        'eq', 'neq', 'in', 'contains', 'gt', 'gte', 'lt', 'lte', 'is_empty', 'is_not_empty'
+      ) then
+        raise exception 'unknown filter operator %', v_op using errcode = '22023';
+      end if;
+      if v_op = 'eq' then
+        v_equal := v_equal || jsonb_build_object(v_field, v_condition->'value');
+      end if;
+    end if;
+  end loop;
+
+  return query
+  select c.*
+  from crm.contacts c
+  left join crm.leads l
+    on l.organization_id = p_organization_id and l.contact_id = c.id
+  left join lateral (
+    select max(conv.last_inbound_at) as last_inbound_at
+    from crm.contact_addresses ca
+    join public.conversations conv
+      on conv.organization_id = ca.organization_id
+     and conv.service = ca.service
+     and conv.address = ca.address
+    where ca.organization_id = p_organization_id and ca.contact_id = c.id
+  ) recency on true
+  where c.organization_id = p_organization_id
+    -- Equality custom-field conditions use the GIN index.
+    and c.custom_fields @> v_equal
+    and not exists (
+      select 1 from jsonb_array_elements(p_conditions) cond
+      where cond->>'field' not in ('tag', 'stage', 'last_contact_days')
+        and not crm.custom_field_matches(c.custom_fields, cond)
+    )
+    and not exists (
+      select 1 from jsonb_array_elements(p_conditions) cond
+      where cond->>'field' = 'tag'
+        and (
+          (
+            cond->>'op' = 'has' and not exists (
+              select 1 from crm.contact_tags ct
+              where ct.contact_id = c.id and ct.tag_id = (cond->>'value')::uuid
+            )
+          )
+          or (
+            cond->>'op' = 'not_has' and exists (
+              select 1 from crm.contact_tags ct
+              where ct.contact_id = c.id and ct.tag_id = (cond->>'value')::uuid
+            )
+          )
+        )
+    )
+    and not exists (
+      select 1 from jsonb_array_elements(p_conditions) cond
+      where cond->>'field' = 'stage'
+        and (
+          (cond->>'op' = 'eq' and l.stage_id is distinct from (cond->>'value')::uuid)
+          or (cond->>'op' = 'neq' and l.stage_id = (cond->>'value')::uuid)
+          or (cond->>'op' = 'is_empty' and l.stage_id is not null)
+          or (cond->>'op' = 'is_not_empty' and l.stage_id is null)
+        )
+    )
+    and not exists (
+      select 1 from jsonb_array_elements(p_conditions) cond
+      where cond->>'field' = 'last_contact_days'
+        and (
+          (
+            cond->>'op' = 'lte' and (
+              recency.last_inbound_at is null
+              or recency.last_inbound_at < now() - ((cond->>'value')::int || ' days')::interval
+            )
+          )
+          or (
+            cond->>'op' = 'gte' and (
+              recency.last_inbound_at is null
+              or recency.last_inbound_at > now() - ((cond->>'value')::int || ' days')::interval
+            )
+          )
+          or (cond->>'op' = 'is_empty' and recency.last_inbound_at is not null)
+        )
+    );
+end;
+$$;
+
+-- The paginated, UI-facing form -- capped at 1000 rows per call, for
+-- browsing/preview. Segment membership itself (crm.refresh_segment) needs
+-- every match, uncapped, so it calls crm._filter_contact_rows directly
+-- instead.
 create function crm.filter_contacts(
   p_organization_id uuid,
   p_conditions jsonb default '[]'::jsonb,
@@ -470,47 +629,15 @@ create function crm.filter_contacts(
 ) returns setof crm.contacts
 language plpgsql
 stable
+security definer
 set search_path to ''
 as $$
-declare
-  v_condition jsonb;
-  v_equal jsonb := '{}'::jsonb;
 begin
-  if jsonb_typeof(p_conditions) is distinct from 'array' then
-    raise exception 'conditions must be a list' using errcode = '22023';
-  end if;
-
-  for v_condition in select * from jsonb_array_elements(p_conditions) loop
-    if not exists (
-      select 1 from crm.organization_pack_items i
-      where i.organization_id = p_organization_id
-        and i.kind = 'custom_field'
-        and i.item_key = v_condition->>'field'
-        and i.value->>'entity' = 'contact'
-    ) then
-      raise exception 'unknown field %', v_condition->>'field' using errcode = '22023';
-    end if;
-    if (v_condition->>'op') not in (
-      'eq', 'neq', 'in', 'contains', 'gt', 'gte', 'lt', 'lte', 'is_empty', 'is_not_empty'
-    ) then
-      raise exception 'unknown filter operator %', v_condition->>'op' using errcode = '22023';
-    end if;
-    if v_condition->>'op' = 'eq' then
-      v_equal := v_equal || jsonb_build_object(v_condition->>'field', v_condition->'value');
-    end if;
-  end loop;
+  perform crm.require_permission(p_organization_id, 'broadcasts.create');
 
   return query
-  select c.*
-  from crm.contacts c
-  where c.organization_id = p_organization_id
-    -- Equality conditions use the GIN index.
-    and c.custom_fields @> v_equal
-    and not exists (
-      select 1 from jsonb_array_elements(p_conditions) cond
-      where not crm.custom_field_matches(c.custom_fields, cond)
-    )
-  order by c.created_at desc, c.id
+  select * from crm._filter_contact_rows(p_organization_id, p_conditions)
+  order by created_at desc, id
   limit least(greatest(coalesce(p_limit, 100), 1), 1000)
   offset greatest(coalesce(p_offset, 0), 0);
 end;

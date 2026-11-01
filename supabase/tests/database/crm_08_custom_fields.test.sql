@@ -323,11 +323,13 @@ select throws_ok(
   '22023', 'unknown filter operator like', 'and real operators'
 );
 
+-- [crm] P4-03: filter_contacts became the base of segments -- gated
+-- broadcasts.create (a marketing permission), not merely scoped by the
+-- caller's own row visibility anymore. A sales_rep never holds it.
 select tests.as_user('rep@test.local');
-select is(
-  (select count(*)::int from crm.filter_contacts(:'org', '[{"field": "age", "op": "is_not_empty"}]')),
-  1,
-  'filters only return contacts the caller can see'
+select throws_ok(
+  format($$ select crm.filter_contacts(%L, '[{"field": "age", "op": "is_not_empty"}]') $$, :'org'),
+  '42501', null, 'a sales_rep (no broadcasts.create) cannot filter contacts at all now'
 );
 
 -- Formatting for templates ----------------------------------------------------------------

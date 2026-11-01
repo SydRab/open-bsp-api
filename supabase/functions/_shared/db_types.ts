@@ -1094,6 +1094,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"segment_members": {
+                  Row: {
+                    "added_at": string,"contact_id": string,"organization_id": string,"segment_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_at"?: string,"contact_id": string,"organization_id": string,"segment_id": string
+                  }
+                  Update: {
+                    "added_at"?: string,"contact_id"?: string,"organization_id"?: string,"segment_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "segment_members_contact_id_fkey"
+      columns: ["contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "segment_members_segment_id_fkey"
+      columns: ["segment_id"]
+isOneToOne: false
+      referencedRelation: "segments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"segments": {
+                  Row: {
+                    "created_at": string,"criteria": NonNullable<Json>,"id": string,"name": string,"organization_id": string,"refreshed_at": string | null,"type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"criteria"?: NonNullable<Json>,"id"?: string,"name": string,"organization_id": string,"refreshed_at"?: string | null,"type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"criteria"?: NonNullable<Json>,"id"?: string,"name"?: string,"organization_id"?: string,"refreshed_at"?: string | null,"type"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"send_rate_buckets": {
                   Row: {
                     "capacity": number,"organization_address": string,"organization_id": string,"refill_per_second": number,"service": Database["public"]['Enums']["service"],"tokens": number,"updated_at": string
@@ -1339,6 +1379,27 @@ isOneToOne: false
 "_ensure_lead":
 { Args: { "p_contact_id": string,"p_organization_id": string,"p_source": string }; Returns: string
                            },
+"_filter_contact_rows":
+{ Args: { "p_conditions": Json,"p_organization_id": string }; Returns: {
+              "created_at": string,
+"custom_fields": NonNullable<Json>,
+"display_name": string | null,
+"first_touch_at": string | null,
+"first_touch_referral": Json | null,
+"id": string,
+"last_touch_at": string | null,
+"last_touch_referral": Json | null,
+"locale": string | null,
+"organization_id": string,
+"updated_at": string,
+"welcome_sent_at": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "contacts"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "_lead_escalation_managers":
 { Args: { "p_agent_id": string,"p_organization_id": string }; Returns: string[]
                            },
@@ -1513,6 +1574,9 @@ isOneToOne: false
 "create_preset_roles":
 { Args: { "p_organization_id": string }; Returns: undefined
                            },
+"create_segment":
+{ Args: { "p_criteria"?: Json,"p_name": string,"p_organization_id": string,"p_type": string }; Returns: string
+                           },
 "create_tag":
 { Args: { "p_name": string,"p_organization_id": string }; Returns: string
                            },
@@ -1568,6 +1632,9 @@ isOneToOne: false
                            },
 "delete_score_threshold":
 { Args: { "p_id": string }; Returns: undefined
+                           },
+"delete_segment":
+{ Args: { "p_segment_id": string }; Returns: undefined
                            },
 "delete_tag":
 { Args: { "p_tag_id": string }; Returns: undefined
@@ -1668,6 +1735,27 @@ isOneToOne: false
               "action": string,"actor_email": string,"created_at": string,"details": Json,"id": number,"target_id": string,"target_type": string
             }[]
                            },
+"get_segment_contacts":
+{ Args: { "p_limit"?: number,"p_offset"?: number,"p_segment_id": string }; Returns: {
+              "created_at": string,
+"custom_fields": NonNullable<Json>,
+"display_name": string | null,
+"first_touch_at": string | null,
+"first_touch_referral": Json | null,
+"id": string,
+"last_touch_at": string | null,
+"last_touch_referral": Json | null,
+"locale": string | null,
+"organization_id": string,
+"updated_at": string,
+"welcome_sent_at": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "contacts"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "get_setting":
 { Args: { "p_agent_id"?: string,"p_key": string,"p_organization_id": string }; Returns: Json
                            },
@@ -1746,6 +1834,11 @@ isOneToOne: false
               "item_key": string,"kind": string,"sort_order": number,"value": Json
             }[]
                            },
+"preview_segment_count":
+{ Args: { "p_criteria"?: Json,"p_organization_id": string }; Returns: {
+              "opted_in_count": number,"total_count": number
+            }[]
+                           },
 "purge_organizations":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -1760,6 +1853,9 @@ isOneToOne: false
                            },
 "record_import_attestation":
 { Args: { "p_marked_opted_in_count": number,"p_organization_id": string,"p_row_count": number }; Returns: undefined
+                           },
+"refresh_segment":
+{ Args: { "p_segment_id": string }; Returns: undefined
                            },
 "rename_tag":
 { Args: { "p_name": string,"p_tag_id": string }; Returns: undefined
@@ -2000,6 +2096,9 @@ isOneToOne: false
                            },
 "update_lead_stage":
 { Args: { "p_id": string,"p_name": string,"p_sort_order": number }; Returns: undefined
+                           },
+"update_segment":
+{ Args: { "p_criteria": Json,"p_name": string,"p_segment_id": string }; Returns: undefined
                            },
 "update_task":
 { Args: { "p_assigned_to": string,"p_due_at": string,"p_id": string,"p_title": string }; Returns: undefined

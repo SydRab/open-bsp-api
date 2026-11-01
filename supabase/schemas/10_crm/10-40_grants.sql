@@ -202,6 +202,15 @@ grant execute on function crm.set_contact_consent(uuid, text, public.service, te
 grant execute on function crm.record_import_attestation(uuid, int, int) to authenticated;
 -- [crm] P3-11d: contact merge (10-29zj).
 grant execute on function crm.merge_contacts(uuid, uuid) to authenticated;
+-- [crm] P4-03: segments (10-29zm). crm._filter_contact_rows is the
+-- internal, uncapped core every one of these calls -- unchecked (no grant
+-- needed, each caller performs its own require_permission first).
+grant execute on function crm.create_segment(uuid, text, text, jsonb) to authenticated;
+grant execute on function crm.update_segment(uuid, text, jsonb) to authenticated;
+grant execute on function crm.delete_segment(uuid) to authenticated;
+grant execute on function crm.refresh_segment(uuid) to authenticated;
+grant execute on function crm.preview_segment_count(uuid, jsonb) to authenticated;
+grant execute on function crm.get_segment_contacts(uuid, int, int) to authenticated;
 grant execute on function crm.format_custom_field(uuid, text, text, jsonb, text) to anon, authenticated;
 -- Used by the functions above, which run as the caller.
 grant execute on function crm.clean_custom_fields(jsonb) to anon, authenticated;

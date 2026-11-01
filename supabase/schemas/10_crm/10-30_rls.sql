@@ -321,6 +321,24 @@ create policy "members can read their orgs contact tags"
 on crm.contact_tags for select to authenticated, anon
 using (organization_id in (select public.get_authorized_orgs('member')));
 
+-- [crm] P4-03: segments. Writes go through crm.create_segment/
+-- update_segment/delete_segment/refresh_segment (broadcasts.create) --
+-- reading a segment's own definition is a broader "any org member" read,
+-- same bar every other catalog-ish table in this file uses, since seeing
+-- that a segment exists and what it's named is not itself sensitive; only
+-- creating/editing one needs the marketing permission.
+alter table crm.segments enable row level security;
+
+create policy "members can read their orgs segments"
+on crm.segments for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
+alter table crm.segment_members enable row level security;
+
+create policy "members can read their orgs segment members"
+on crm.segment_members for select to authenticated, anon
+using (organization_id in (select public.get_authorized_orgs('member')));
+
 -- Assignments (P2-09c) ------------------------------------------------------------
 
 alter table crm.conversation_assignments enable row level security;
